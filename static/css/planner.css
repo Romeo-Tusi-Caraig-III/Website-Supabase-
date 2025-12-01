@@ -1,0 +1,104 @@
+/* Planner-specific styles — uses tokens from admin/index.html */
+    :root{
+      --planner-accent: #0ea5e9; /* planner accent */
+      --accent-2: #f97316;
+      --card-gap: 18px;
+    }
+
+    .planner-page{ display:flex; flex-direction:column; gap:16px; }
+    /* Reuse calendar topbar style for unified frame */
+    .cal-header { margin-bottom:6px; display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
+    .cal-header .greeting h1 { font-size:20px; letter-spacing: -.2px; margin:0 }
+    .cal-header .greeting p { font-size:0.95rem; color:var(--gray-600); margin-top:6px }
+
+    /* Right-side top card (unified look similar to Budget) */
+    .top-card {
+      background:var(--white);
+      border:1px solid var(--gray-200);
+      border-radius:12px;
+      padding:12px 14px;
+      box-shadow:var(--shadow-sm);
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      min-width:220px;
+      align-items:flex-end;
+    }
+    .top-card .title { font-weight:900; font-size:15px; color:#0f172a; align-self:flex-start; }
+    .top-card .muted { color:var(--gray-600); font-size:13px; align-self:flex-start }
+    .top-card .top-actions { display:flex; gap:8px; }
+
+    /* top area */
+    .page-top-inline { display:flex; gap:12px; align-items:center; margin-top:2px }
+    .page-title { font-size:20px; font-weight:900; color:#0f172a }
+    .muted-small{ color:var(--gray-600); font-weight:600 }
+
+    /* stats row */
+    .stat-row{ display:flex; gap:12px; margin-top:8px; flex-wrap:wrap }
+    .stat-tile{ background:var(--white); border-radius:12px; padding:10px 14px; box-shadow:var(--shadow-sm); border:1px solid var(--gray-200); min-width:150px }
+    .stat-label{ color:var(--gray-600); font-weight:700; font-size:12px }
+    .stat-number{ font-weight:900; font-size:18px; margin-top:6px }
+
+    /* grid */
+    .main-grid{ display:grid; grid-template-columns: 1fr 340px; gap:var(--card-gap); margin-top:6px }
+    @media(max-width:1000px){ .main-grid{ grid-template-columns:1fr } }
+
+    /* panel tweaks */
+    .panel{ padding:16px; border-radius:12px; background:var(--white); border:1px solid var(--gray-200); box-shadow:var(--shadow-sm) }
+
+    /* segmented filters (unique visual) */
+    .seg{ position:relative; background:transparent; border-radius:999px; display:inline-flex; gap:6px; padding:6px }
+    .seg .thumb{ position:absolute; left:6px; top:6px; bottom:6px; width:72px; background:linear-gradient(180deg,var(--planner-accent),var(--emerald-600)); border-radius:999px; transform:translateX(0); transition:transform .28s cubic-bezier(.2,.9,.3,1); box-shadow: 0 6px 20px rgba(14,165,233,0.08); z-index:0; }
+    .seg button{ position:relative; z-index:1; background:var(--white); border-radius:999px; border:0; padding:8px 12px; font-weight:700; color:var(--gray-700); cursor:pointer; }
+    .seg button.active{ color:#fff }
+
+    /* task card (distinct "timeline" layout on the left) */
+    .task-card{ display:flex; gap:12px; align-items:stretch; border-radius:12px; padding:12px; border:1px solid #eef1f6; background:linear-gradient(180deg,#fff,#fff); margin-bottom:12px; }
+    .task-left{ flex:1; min-width:0; display:flex; flex-direction:column; gap:8px }
+    .task-right{ width:220px; display:flex; flex-direction:column; gap:10px; align-items:flex-end }
+    .task-title{ font-weight:900; font-size:15px; color:#0f172a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+    .task-desc{ color:var(--gray-600); font-size:13px; margin-top:4px; max-width:100% }
+
+    /* priority badges */
+    .badge{ display:inline-block; padding:6px 8px; border-radius:999px; font-weight:800; font-size:12px; border:1px solid rgba(0,0,0,0.04) }
+    .priority-high{ background:#fff7f7; color:#b91c1c; border-color:#fecaca; }
+    .priority-medium{ background:#fff7ed; color:#c2410c; border-color:#fed7aa; }
+    .priority-low{ background:#f0fdf4; color:#065f46; border-color:#bbf7d0; }
+
+    /* tags for types */
+    .tag{ display:inline-block; padding:6px 8px; border-radius:8px; background:#f3f4f6; color:var(--gray-700); font-weight:700; font-size:12px; margin-right:6px }
+    .tag.secondary{ background:#eef2ff; color:#4f46e5 }
+
+    /* progress */
+    .progress{ width:160px; height:8px; background:#f2f4f5; border-radius:999px; overflow:hidden }
+    .progress .fill{ height:100%; background:var(--planner-accent); }
+
+    /* small action buttons */
+    .iconbtn{ border-radius:8px; border:1px solid #eef1f6; padding:6px 8px; background:#fff; cursor:pointer; font-weight:700 }
+    .actions-row{ display:flex; gap:8px }
+
+    /* timeline view: vertical timeline styling (unique) */
+    .timeline { display:flex; flex-direction:column; gap:14px; }
+    .timeline-entry{ display:flex; gap:12px; align-items:flex-start; background:linear-gradient(180deg,#fff,#fff); border-radius:10px; padding:10px; border:1px solid #f1f3f5 }
+    .timeline-dot{ width:12px; height:12px; border-radius:50%; background:var(--planner-accent); margin-top:6px; flex:0 0 14px }
+
+    /* modal adjustments (floating labels) */
+    #modal{ display:none; position:fixed; inset:0; align-items:center; justify-content:center; z-index:1400; background:rgba(8,12,16,0.18) }
+    .dialog{ width:min(760px,96%); background:var(--white); border-radius:12px; box-shadow:0 24px 60px rgba(12,18,30,0.12); overflow:hidden; display:flex; flex-direction:column }
+    .dialog-header{ display:flex; justify-content:space-between; align-items:center; padding:12px 16px; border-bottom:1px solid var(--gray-200) }
+    .dialog-body{ padding:16px }
+    .dialog-footer{ padding:12px 16px; display:flex; justify-content:flex-end; gap:8px; border-top:1px solid var(--gray-200) }
+    .field{ position:relative; margin-bottom:10px }
+    .floating-label{ position:absolute; left:12px; top:10px; font-size:13px; color:var(--gray-600); pointer-events:none; transform-origin:left top; transition: all .14s ease }
+    .field input, .field textarea, .field select{ width:100%; padding:14px 12px 10px; border-radius:8px; border:1px solid var(--gray-200); background:var(--white); font-size:14px }
+    .field.has-value .floating-label, .field input:focus + .floating-label, .field textarea:focus + .floating-label, .field select:focus + .floating-label { transform: translateY(-10px) scale(.92); color:var(--gray-600) }
+
+    /* utility */
+    .muted-note{ color:var(--gray-600) }
+
+    @media(max-width:640px){
+      .task-right{ display:none }
+      .main-grid{ grid-template-columns:1fr }
+      .top-card{ min-width:unset; width:100% }
+      .cal-header { flex-direction:column; align-items:flex-start; gap:10px; }
+    }

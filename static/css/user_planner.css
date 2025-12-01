@@ -1,0 +1,196 @@
+ /* Planner-specific styles — uses tokens from admin/index.html */
+    :root{
+      --planner-accent: #0ea5e9;
+      --planner-accent-2: #10b981;
+      --accent-2: #f97316;
+      --card-gap: 18px;
+      --muted: #64748b;
+      --white: #ffffff;
+      --gray-200: #e6edf3;
+      --gray-600: #6b7280;
+      --shadow-sm: 0 6px 18px rgba(12,18,30,0.04);
+    }
+
+    /* Basic resets / accessibility helpers */
+    .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+
+    /* Planner layout */
+    .planner-page{ display:flex; flex-direction:column; gap:16px; }
+    .page-title { font-size:20px; font-weight:900; color:#0f172a }
+
+    .main-grid{ display:grid; grid-template-columns: 1fr 340px; gap:var(--card-gap); margin-top:6px }
+    @media(max-width:1000px){ .main-grid{ grid-template-columns:1fr } }
+
+    .panel{ padding:16px; border-radius:12px; background:var(--white); border:1px solid var(--gray-200); box-shadow:var(--shadow-sm); overflow:visible }
+
+    /* segmented control improved for readable labels — Option B (more space + pixel-perfect thumb) */
+    .seg{
+      position:relative;
+      background:#ffffff;
+      border-radius:999px;
+      display:inline-flex;
+      gap:14px;            /* more space between buttons */
+      padding:10px; 
+      align-items:center;
+      border:1px solid var(--gray-200);
+      box-shadow: 0 6px 18px rgba(12,18,30,0.03);
+      margin-left:auto; /* push to right in header */
+      outline: none;
+    }
+    .seg:focus-within { outline: none; }
+
+    /* thumb sits behind the buttons (Option B) */
+    .seg .thumb{
+      position:absolute;
+      left:10px;
+      top:10px;
+      bottom:10px;
+      /* make the gradient run left→right so the fill reads as a single "fill" */
+      background: linear-gradient(90deg, var(--planner-accent), var(--planner-accent-2));
+      border-radius:999px;
+      transform:translateX(0);
+      transition: transform .22s cubic-bezier(.2,.9,.3,1), width .14s ease, opacity .14s ease;
+      box-shadow: 0 8px 22px rgba(16,185,129,0.12);
+      z-index:1;
+      pointer-events:none;
+      opacity:1;
+      will-change: transform, width;
+    }
+
+    .seg button{
+      position:relative;
+      z-index:2;
+      background:transparent;
+      border-radius:999px;
+      border:0;
+      padding:10px 16px;
+      font-weight:800;
+      color:#065f46; /* green text that reads on white */
+      cursor:pointer;
+      transition: color .14s ease, transform .14s ease, box-shadow .12s ease;
+      display:inline-flex;align-items:center;gap:8px;
+      font-size:13px;
+      min-width:68px;         /* ensure a minimum width so buttons look detached */
+      text-align:center;
+    }
+    .seg button .seg-icon{ font-size:14px; display:inline-block; width:18px; text-align:center }
+    .seg button .seg-label{ display:inline-block }
+
+    .seg button.active{
+      color:#ffffff !important;
+      font-weight:900;
+      transform:translateY(-1px);
+      z-index:3;
+    }
+
+    /* keyboard focus styling on the button only */
+    .seg button:focus { outline: none; box-shadow: none; }
+    .seg button:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 4px rgba(16,185,129,0.12);
+      border-radius: 999px;
+      z-index:4;
+    }
+
+    /* compact variant: smaller thumb, tighter padding */
+    .seg.seg--compact .thumb{ height:30px; top:7px; bottom:7px; box-shadow: 0 6px 14px rgba(16,185,129,0.10); }
+    .seg.seg--compact button{ padding:6px 10px; font-size:13px }
+
+    /* brand color variant: alternative thumb gradient + white active text */
+    .seg.seg--brand .thumb{ background: linear-gradient(180deg, var(--planner-accent), var(--planner-accent-2)) }
+    .seg.seg--brand button{ color:#065f46 }
+    .seg.seg--brand button.active{ color:#fff }
+
+    /* icon-only variant: hide labels, show icons only (use aria-labels on buttons) */
+    .seg.seg--icon button .seg-label{ position:absolute; left:-9999px; width:1px; height:1px; overflow:hidden }
+    .seg.seg--icon button{ padding:8px; }
+
+    @media(max-width:640px){
+      .seg .thumb { height:34px; top:6px; bottom:6px; }
+      .seg button { padding:8px 10px; }
+    }
+
+    /* search, badges, tasks, modal (kept minimal / consistent) */
+    .search-inline { display:flex;align-items:center;gap:8px;border-radius:10px;padding:6px 8px;border:1px solid var(--gray-200);background:var(--white) }
+    .task-card{ display:flex; gap:12px; align-items:stretch; border-radius:12px; padding:12px; border:1px solid #eef1f6; background:linear-gradient(180deg,#fff,#fff); margin-bottom:12px; }
+    .timeline-entry{ display:flex; gap:12px; align-items:flex-start; background:linear-gradient(180deg,#fff,#fff); border-radius:10px; padding:10px; border:1px solid #f1f3f5 }
+    .badge{ display:inline-block; padding:6px 8px; border-radius:999px; font-weight:800; font-size:12px; border:1px solid rgba(0,0,0,0.04) }
+    .priority-high{ background:#fff7f7; color:#b91c1c; border-color:#fecaca; }
+    .priority-medium{ background:#fff7ed; color:#c2410c; border-color:#fed7aa; }
+    .priority-low{ background:#f0fdf4; color:#065f46; border-color:#bbf7d0; }
+    .tag{ display:inline-block; padding:6px 8px; border-radius:8px; background:#f3f4f6; color:var(--gray-700); font-weight:700; font-size:12px; margin-right:6px }
+    .tag.secondary{ background:#eef2ff; color:#4f46e5 }
+
+    /* sort control styling: smaller, right-aligned, high-contrast */
+    .controls-row{ display:flex; align-items:center; gap:8px; }
+    #sortSel{ width:96px; padding:6px 8px; border-radius:8px; border:1px solid var(--gray-200); background:var(--white); color:#0f172a; font-weight:700; font-size:12px }
+    #sortSel option{ color:#0f172a }
+    .sort-label{ font-weight:700;color:var(--gray-600);font-size:13px;margin-right:6px }
+
+    @media(max-width:640px){
+      #sortSel{ width:100%; }
+      .controls-row{ width:100%; justify-content:flex-end }
+    }
+
+    /* modal + floating labels
+       - Raise modal/dialog stacking context so native select menus inside dialogs appear above overlay
+    */
+    #modal{ display:none; position:fixed; inset:0; align-items:center; justify-content:center; z-index:10050; background:rgba(8,12,16,0.18) }
+    .dialog{ width:min(760px,96%); background:var(--white); border-radius:12px; box-shadow:0 24px 60px rgba(12,18,30,0.12); overflow:visible; display:flex; flex-direction:column; position:relative; z-index:10060; }
+    /* stats-modal specific compact spacing */
+    .dialog.stats { width:min(620px,90%); z-index:10060; }
+    .dialog.stats .timeline-entry, .dialog.stats .task-card { padding:8px; margin-bottom:8px; border-radius:10px }
+    .dialog.stats .timeline-entry { border-radius:10px }
+    .dialog.stats .actions-row { display:flex; gap:8px }
+    .dialog.stats .dialog-footer { display:none }
+    .dialog-header{ display:flex; justify-content:space-between; align-items:center; padding:12px 16px; border-bottom:1px solid var(--gray-200) }
+    .dialog-body{ padding:16px }
+    .dialog-footer{ padding:12px 16px; display:flex; justify-content:flex-end; gap:8px; border-top:1px solid var(--gray-200) }
+    .field{ position:relative; margin-bottom:10px }
+    .floating-label{ position:absolute; left:12px; top:10px; font-size:13px; color:var(--gray-600); pointer-events:none; transform-origin:left top; transition: all .14s ease }
+    .field input, .field textarea, .field select{ width:100%; padding:14px 12px 10px; border-radius:8px; border:1px solid var(--gray-200); background:var(--white); font-size:14px }
+    .field.has-value .floating-label, .field input:focus + .floating-label, .field textarea:focus + .floating-label, .field select:focus + .floating-label { transform: translateY(-10px) scale(.92); color:var(--gray-600) }
+
+    /* modal visual warning */
+    .modal-warning{ display:block; margin-bottom:12px; padding:10px 12px; border-radius:8px; background:linear-gradient(90deg,#fff7ed,#fff); border:1px solid rgba(252,211,77,0.25); color:#92400e; font-weight:700; }
+
+    /* focus styles */
+    :focus { outline: 3px solid rgba(59,130,246,0.6); outline-offset: 2px; box-shadow: 0 3px 8px rgba(59,130,246,0.12); }
+    button:focus, .btn:focus { outline: 3px solid rgba(59,130,246,0.85); }
+
+    /* toast container */
+    #toast-container { position:fixed; right:18px; top:18px; z-index:15000; pointer-events:none; }
+    .toast { pointer-events:auto; padding:10px 12px; border-radius:8px; color:#fff; font-weight:700; margin-top:8px; box-shadow:0 6px 18px rgba(0,0,0,0.06); display:flex; gap:8px; align-items:center; }
+
+    /* visible sort pill (mirrors current selection) */
+    #sortDisplay {
+      display:inline-block;
+      min-width:88px;
+      padding:6px 12px;
+      border-radius:999px;
+      border:2px solid rgba(14,165,233,0.18);
+      background: linear-gradient(180deg,#ffffff,#f2fbff);
+      color: #064e8a;
+      font-weight:800;
+      font-size:13px;
+      text-align:center;
+      box-shadow: 0 6px 16px rgba(14,165,233,0.06);
+      transition: transform .18s cubic-bezier(.2,.9,.3,1), opacity .12s ease;
+      margin-left:8px;
+      vertical-align:middle;
+    }
+
+    /* keep select z-index default — modal stacking controls dropdown layering */
+    select { color: #0f172a; background: #ffffff; position: relative; z-index: auto; -webkit-appearance: menulist; appearance: menulist; }
+    select option { color: #0f172a; background: #ffffff; }
+    select:focus { outline: 3px solid rgba(16,185,129,0.12); }
+
+    /* fade helpers */
+    .fade-out { opacity:0; transform: translateY(-6px) scale(.995); }
+    .fade-in  { opacity:1; transform: translateY(0) scale(1); }
+
+    @media(max-width:640px){
+      .task-right{ display:none }
+      .main-grid{ grid-template-columns:1fr }
+      #sortDisplay{ min-width:64px; padding:5px 8px; font-size:12px; }
+    }

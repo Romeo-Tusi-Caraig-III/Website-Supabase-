@@ -1,0 +1,611 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Likhayag — Sign in</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --bg-1: #0f766e;
+    --bg-2: #064e3b;
+    --card-bg: rgba(255,255,255,0.98);
+    --muted: #58686d;
+    --accent: #059669;           /* brand accent (green) */
+    --gold-1:#eab308;
+    --gold-2:#ca8a04;
+    --err: #dc2626;
+    --shadow-lg: 0 24px 60px rgba(2,6,23,0.18);
+    --glass: rgba(255,255,255,0.66);
+    --input-text: #042f2c;       /* high-contrast input text */
+    --placeholder: #8fa2a0;      /* readable placeholder */
+    --icon-fill: #556b67;        /* default icon fill */
+    --input-left-pad: 56px;      /* space for left icon */
+    --input-right-pad: 72px;     /* space for right icon (eye) */
+  }
+
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    min-height:100%;
+    font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial;
+    background: radial-gradient(900px 450px at 8% 8%, rgba(255,255,255,0.03), transparent),
+                linear-gradient(180deg,var(--bg-1),var(--bg-2));
+    -webkit-font-smoothing:antialiased;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:48px;
+    color:#071422;
+  }
+
+  .card {
+    width:100%;
+    max-width:740px;
+    border-radius:28px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(255,255,255,0.96));
+    box-shadow: var(--shadow-lg);
+    padding:48px;
+    position:relative;
+  }
+
+  .brand {
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:14px;
+    margin-bottom:26px;
+  }
+
+  .logo-img {
+    width:160px;
+    height:160px;
+    border-radius:22px;
+    overflow:hidden;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:linear-gradient(135deg,var(--accent),var(--bg-2));
+    box-shadow: 0 18px 44px rgba(5,150,105,0.14);
+  }
+  .logo-img img {
+    max-width:100%;
+    max-height:100%;
+    object-fit:contain;
+    display:block;
+  }
+
+  h1{
+    margin:0;
+    font-size:30px;
+    font-weight:800;
+    letter-spacing:-0.03em;
+    color: #06323a;
+  }
+  .subtitle{
+    margin:0;
+    font-size:15px;
+    color:var(--muted);
+    font-weight:500;
+  }
+
+  .form {
+    margin-top:12px;
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+  }
+
+  label {
+    display:block;
+    margin-bottom:8px;
+    font-size:15px;
+    font-weight:600;
+    color:#06323a;
+  }
+
+  .input-row{
+    position:relative;
+    display:flex;
+    align-items:center;
+  }
+
+  .input {
+    width:100%;
+    border-radius:14px;
+    padding:14px 16px;
+    padding-left: var(--input-left-pad);  /* room for left icon */
+    padding-right: var(--input-right-pad);/* room for right icon (eye) */
+    border:1px solid rgba(15,23,42,0.06);
+    background: linear-gradient(180deg,var(--glass),var(--card-bg));
+    font-size:16px;
+    line-height:20px;
+    color: var(--input-text) !important;
+    -webkit-text-fill-color: var(--input-text) !important;
+    transition: box-shadow .18s, border-color .18s;
+    outline:none;
+  }
+
+  .input::placeholder { color: var(--placeholder); opacity: 1; }
+  .input::-webkit-input-placeholder { color: var(--placeholder); }
+  .input::-moz-placeholder { color: var(--placeholder); opacity:1; }
+  .input:-ms-input-placeholder { color: var(--placeholder); }
+  .input::-ms-input-placeholder { color: var(--placeholder); }
+
+  #password {
+    color: var(--input-text) !important;
+    -webkit-text-fill-color: var(--input-text) !important;
+  }
+
+  .input:focus{
+    box-shadow: 0 14px 36px rgba(5,150,105,0.08);
+    border-color: rgba(5,150,105,0.95);
+  }
+
+  .icon {
+    position:absolute;
+    left:12px;
+    top:50%;
+    transform:translateY(-50%);
+    width:28px;
+    height:28px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    pointer-events:none;
+    z-index:3;
+  }
+  .icon svg{ width:20px; height:20px; display:block; fill: var(--icon-fill); }
+
+  .icon-right {
+    position:absolute;
+    right:8px;
+    top:50%;
+    transform:translateY(-50%);
+    z-index:4;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+
+  /* Use stroke-only outlined icons (copied style from Create Account) */
+  .toggle svg {
+    width:20px;
+    height:20px;
+    display:block;
+    stroke: var(--accent);
+    fill: none;
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .toggle { background:transparent; border:0; padding:8px; border-radius:10px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; }
+  .toggle:focus{ outline:2px solid rgba(5,150,105,0.12); outline-offset:2px; }
+  .toggle:hover{ background: rgba(5,150,105,0.06); transform: translateY(-1px); }
+
+  .help {
+    font-size:13px;
+    color:var(--muted);
+    margin-top:8px;
+  }
+
+  .row-between{ display:flex; align-items:center; justify-content:space-between; margin-top:8px; }
+
+  .remember{ display:flex; gap:10px; align-items:center; color:var(--muted); font-size:15px; }
+  .checkbox{ width:18px; height:18px; accent-color:var(--accent); }
+
+  .forgot { font-size:15px; color:var(--accent); text-decoration:none; font-weight:700; cursor:pointer }
+
+  .btn {
+    margin-top:14px;
+    border:0;
+    padding:16px 20px;
+    border-radius:999px;
+    font-weight:800;
+    background:linear-gradient(90deg,var(--gold-1),var(--gold-2));
+    color:#fff;
+    letter-spacing:0.9px;
+    font-size:15px;
+    cursor:pointer;
+    box-shadow: 0 12px 40px rgba(234,179,8,0.18);
+  }
+  .btn:active{ transform: translateY(1px); }
+  .btn:disabled{ opacity:.6; cursor:default; }
+
+  .divider {
+    margin:26px 0 12px; text-align:center; position:relative; font-size:15px; color:var(--muted);
+  }
+  .divider::before{
+    content:""; position:absolute; left:20px; right:20px; top:50%; height:1px; background:linear-gradient(90deg,transparent,#e6eef0,transparent);
+    transform:translateY(-50%); border-radius:2px; z-index:0;
+  }
+  .divider span{ position:relative; z-index:1; padding:10px 18px; background:transparent; border-radius:999px; color:var(--muted); }
+
+  .footer{ text-align:center; margin-top:14px; font-size:15px; color:var(--muted); }
+  .footer a{ color:var(--accent); font-weight:800; text-decoration:none; }
+
+  .error { color:var(--err); font-size:14px; margin-top:8px; display:none; }
+
+  /* Modal styles (kept same) */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(2,6,23,0.45);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    z-index:1200;
+    padding: 24px;
+  }
+
+  .modal-card {
+    width:100%;
+    max-width:520px;
+    border-radius:14px;
+    background: linear-gradient(180deg,#ffffff,#fbfbfb);
+    box-shadow: 0 30px 80px rgba(3,10,18,0.35);
+    padding:20px 20px 18px;
+    transform-origin:center;
+  }
+
+  .modal-title {
+    font-weight:800;
+    font-size:18px;
+    color:#0b2624;
+    margin-bottom:6px;
+  }
+  .modal-desc {
+    color:var(--muted);
+    font-size:14px;
+    margin-bottom:14px;
+  }
+
+  .modal-input {
+    width:100%;
+    border-radius:10px;
+    padding:12px 14px;
+    border:1px solid rgba(15,23,42,0.06);
+    font-size:15px;
+    color:var(--input-text);
+    background: #fff;
+    box-shadow: inset 0 1px 0 rgba(0,0,0,0.02);
+  }
+
+  .modal-row {
+    display:flex;
+    gap:12px;
+    justify-content:flex-end;
+    align-items:center;
+    margin-top:14px;
+  }
+
+  .modal-btn {
+    padding:10px 14px;
+    border-radius:10px;
+    border:0;
+    cursor:pointer;
+    font-weight:700;
+  }
+  .modal-btn.cancel {
+    background:transparent;
+    color:#1f2937;
+  }
+  .modal-btn.send {
+    background: linear-gradient(90deg,var(--gold-1),var(--gold-2));
+    color:#fff;
+    box-shadow: 0 12px 30px rgba(234,179,8,0.16);
+  }
+
+  .modal-msg {
+    margin-top:10px;
+    font-size:14px;
+  }
+  .modal-msg.success { color: #065f46; }
+  .modal-msg.error { color: var(--err); }
+
+  @media (max-width:720px){
+    .card{ padding:28px; max-width:92%; }
+    .logo-img{ width:120px; height:120px; }
+    h1{ font-size:22px; }
+    .modal-card { padding:16px; }
+  }
+</style>
+</head>
+<body>
+
+  <main class="card" role="main" aria-labelledby="signin-title">
+    <header class="brand">
+      <div class="logo-img" aria-hidden="false">
+        <img src="/static/images/likhayag-logo.png" alt="Likhayag logo">
+      </div>
+
+      <h1 id="signin-title">Likhayag Login</h1>
+      <p class="subtitle">Sign in to your Likhayag Organization Account</p>
+    </header>
+
+    <div id="flashContainer" aria-live="polite" style="min-height:0"></div>
+
+    <form id="loginForm" class="form" method="POST" action="{{ url_for('login') }}">
+      <!-- EMAIL -->
+      <div>
+        <label for="email">Email</label>
+        <div class="input-row" style="position:relative">
+          <div class="icon" aria-hidden="true" title="Email">
+            <!-- filled mail icon -->
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path d="M3 6.5C3 5.1 4.1 4 5.5 4h13c1.4 0 2.5 1.1 2.5 2.5v11c0 1.4-1.1 2.5-2.5 2.5h-13C4.1 20 3 18.9 3 17.5v-11zM5 7.5l7 5 7-5"/>
+            </svg>
+          </div>
+
+          <input id="email" name="email" class="input" type="email" placeholder="student@gmail.com" required aria-describedby="emailError" />
+        </div>
+        <div id="emailError" class="error">Email must end with <strong>@gmail.com</strong></div>
+      </div>
+
+      <!-- PASSWORD -->
+      <div>
+        <label for="password">Password</label>
+        <div class="input-row" style="position:relative">
+          <div class="icon" aria-hidden="true" title="Password">
+            <!-- filled lock icon -->
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path d="M6 10V7a6 6 0 0 1 12 0v3h1a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1h1zm3 0h6V7a3 3 0 0 0-6 0v3z"/>
+            </svg>
+          </div>
+
+          <input id="password" name="password" class="input" type="password" placeholder="Enter your password" required aria-describedby="passwordError passwordHelp" />
+          
+          <div class="icon-right">
+            <button type="button" id="togglePassword" class="toggle" aria-label="Show password" title="Show/hide password">
+              <!-- outlined eye (initial) copied from Create Account -->
+              <svg id="eyeIcon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div id="passwordError" class="error">Password must be at least 8 characters and contain at least one number and one special character.</div>
+        <div id="passwordHelp" class="help">Min 8 chars, include a number and a special character.</div>
+      </div>
+
+      <div class="row-between" style="margin-top:12px">
+        <label class="remember"><input type="checkbox" class="checkbox" name="remember" /> Remember me</label>
+        <a id="forgotLink" class="forgot" href="#">Forgot password?</a>
+      </div>
+
+      <button type="submit" class="btn" aria-live="polite">Sign In</button>
+
+      <div class="divider"><span>or</span></div>
+
+      <div class="footer">Don't have an account? <a href="{{ url_for('signup') }}">Sign up</a></div>
+    </form>
+  </main>
+
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  // elements
+  const emailEl = document.getElementById('email');
+  const pwdEl = document.getElementById('password');
+  const toggleBtn = document.getElementById('togglePassword');
+  const eyeIcon = document.getElementById('eyeIcon');
+  const forgotLink = document.getElementById('forgotLink');
+  const flashContainer = document.getElementById('flashContainer');
+
+  const allowedAdmin = "admin@admin.com";
+  const passwordRegex = /^(?=.*\d)(?=.*[!@#$%^&*()_\-+={[}\]|\\:;"'<>,.?/]).{8,}$/;
+
+  function showFlash(message, type='error'){
+    flashContainer.innerHTML = '';
+    const div = document.createElement('div');
+    div.style.marginBottom = '12px';
+    div.style.padding = '12px 14px';
+    div.style.borderRadius = '10px';
+    div.style.fontWeight = '700';
+    div.style.fontSize = '14px';
+    div.style.display = 'flex';
+    div.style.alignItems = 'center';
+    div.style.gap = '10px';
+    if(type === 'error'){
+      div.style.background = 'rgba(220,38,38,0.06)';
+      div.style.color = 'var(--err)';
+      div.style.border = '1px solid rgba(220,38,38,0.12)';
+    } else {
+      div.style.background = 'rgba(16,185,129,0.06)';
+      div.style.color = '#065f46';
+      div.style.border = '1px solid rgba(16,185,129,0.12)';
+    }
+    div.textContent = message;
+    flashContainer.appendChild(div);
+    setTimeout(()=> { if(div.parentNode) div.remove(); }, 6000);
+  }
+
+  // Input validations (live)
+  emailEl.addEventListener('input', () => {
+    const v = emailEl.value.trim();
+    const emailErrorEl = document.getElementById('emailError');
+    if(v && !(v.endsWith('@gmail.com') || v === allowedAdmin)){
+      emailErrorEl.style.display = 'block';
+    } else {
+      emailErrorEl.style.display = 'none';
+    }
+  });
+  pwdEl.addEventListener('input', () => {
+    const v = pwdEl.value;
+    const pwdErrorEl = document.getElementById('passwordError');
+    if(v && !passwordRegex.test(v)){
+      pwdErrorEl.style.display = 'block';
+    } else {
+      pwdErrorEl.style.display = 'none';
+    }
+  });
+
+  // Reapply input colors (safety for some browsers / autofill)
+  function applyInputColors(){
+    const inputs = document.querySelectorAll('.input');
+    const rootStyle = getComputedStyle(document.documentElement);
+    const txt = rootStyle.getPropertyValue('--input-text') || '#042f2c';
+    inputs.forEach(i=>{
+      i.style.color = txt.trim();
+      i.style.webkitTextFillColor = txt.trim();
+    });
+  }
+  applyInputColors();
+
+  // Toggle password visibility - swaps outlined eye <-> eye-off (with slash)
+  toggleBtn.addEventListener('click', () => {
+    const current = pwdEl.getAttribute('type');
+    if(current === 'password'){
+      pwdEl.setAttribute('type','text');
+      toggleBtn.setAttribute('aria-label','Hide password');
+      // eye-off: outlined with slash (copied style)
+      eyeIcon.innerHTML =
+        '<path d="M3 3l18 18"></path>' +
+        '<path d="M9.88 9.88a3 3 0 104.24 4.24"></path>' +
+        '<path d="M2.46 12C3.73 7.94 7.52 5 12 5c1.63 0 3.14.37 4.5 1.03"></path>';
+    } else {
+      pwdEl.setAttribute('type','password');
+      toggleBtn.setAttribute('aria-label','Show password');
+      // eye (outlined open)
+      eyeIcon.innerHTML =
+        '<path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>' +
+        '<circle cx="12" cy="12" r="3"></circle>';
+    }
+    // reapply input color (fixes some browsers which change color on type swap)
+    setTimeout(applyInputColors, 0);
+  });
+
+  // Forgot password modal logic
+  forgotLink.addEventListener('click', (e)=>{
+    e.preventDefault();
+    openForgotModal();
+  });
+
+  function openForgotModal(){
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.addEventListener('click', (ev) => { if(ev.target === overlay) overlay.remove(); });
+
+    const modal = document.createElement('div');
+    modal.className = 'modal-card';
+    modal.innerHTML = `
+      <div class="modal-title">Reset your password</div>
+      <div class="modal-desc">Enter your email and we'll send a secure link to reset your password.</div>
+      <input id="fpEmail" type="email" class="modal-input" placeholder="you@gmail.com" />
+      <div id="fpMsg" class="modal-msg" style="display:none"></div>
+      <div class="modal-row">
+        <button id="fpCancel" class="modal-btn cancel">Cancel</button>
+        <button id="fpSend" class="modal-btn send">Send</button>
+      </div>
+    `;
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+
+    const fpEmail = document.getElementById('fpEmail');
+    const fpMsg = document.getElementById('fpMsg');
+    const fpCancel = document.getElementById('fpCancel');
+    const fpSend = document.getElementById('fpSend');
+
+    fpCancel.addEventListener('click', ()=> overlay.remove());
+
+    fpSend.addEventListener('click', ()=>{
+      const email = fpEmail.value.trim();
+      if(!email){
+        fpMsg.style.display = 'block';
+        fpMsg.className = 'modal-msg error';
+        fpMsg.textContent = 'Please enter your email.';
+        return;
+      }
+      if(!(email.endsWith('@gmail.com') || email === allowedAdmin)){
+        fpMsg.style.display = 'block';
+        fpMsg.className = 'modal-msg error';
+        fpMsg.textContent = 'Please enter a valid Gmail address (or admin).';
+        return;
+      }
+
+      fpMsg.style.display = 'none';
+      fpSend.disabled = true;
+      fpSend.textContent = 'Sending...';
+
+      fetch('/api/forgot-password', {
+        method:'POST',
+        credentials:'same-origin',
+        headers:{ 'Content-Type':'application/json','Accept':'application/json' },
+        body: JSON.stringify({ email })
+      })
+      .then(async (res)=>{
+        const data = await res.json().catch(()=>({}));
+        if(!res.ok) throw new Error(data.message || 'Failed to send reset email');
+        // show success inside modal briefly then close
+        fpMsg.style.display = 'block';
+        fpMsg.className = 'modal-msg success';
+        fpMsg.textContent = data.message || 'If that address exists, a reset link has been sent.';
+        setTimeout(()=> overlay.remove(), 1500);
+      })
+      .catch(err=>{
+        fpMsg.style.display = 'block';
+        fpMsg.className = 'modal-msg error';
+        fpMsg.textContent = err.message || 'Failed to send reset email';
+      })
+      .finally(()=>{
+        fpSend.disabled = false;
+        fpSend.textContent = 'Send';
+      });
+    });
+  }
+
+  // Submit handler with validations (keeps your API logic)
+  const form = document.getElementById('loginForm');
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    const email = emailEl.value.trim();
+    const password = pwdEl.value;
+    const remember = !!form.querySelector('input[name="remember"]')?.checked;
+
+    if(!(email.endsWith('@gmail.com') || email === allowedAdmin)){
+      document.getElementById('emailError').style.display = 'block';
+      showFlash('Please use a valid Gmail address ending with @gmail.com', 'error');
+      return;
+    }
+
+    if(!passwordRegex.test(password)){
+      document.getElementById('passwordError').style.display = 'block';
+      showFlash('Password must be at least 8 characters and include a number and a special character.', 'error');
+      return;
+    }
+
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const prevText = submitBtn.textContent;
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Signing in...';
+
+    fetch('/api/login', {
+      method:'POST',
+      credentials:'same-origin',
+      headers:{ 'Content-Type':'application/json','Accept':'application/json' },
+      body: JSON.stringify({ email, password, remember })
+    })
+    .then(async res=>{
+      const data = await res.json().catch(()=>({}));
+      if(!res.ok) throw new Error(data.message || 'Login failed');
+      showFlash(data.message || 'Login successful', 'success');
+      setTimeout(()=>{ window.location.href = data.redirect_url || '/home'; }, 450);
+    })
+    .catch(err=>{
+      console.error('Login error', err);
+      showFlash(err.message || 'Login failed', 'error');
+    })
+    .finally(()=>{
+      submitBtn.disabled = false;
+      submitBtn.textContent = prevText;
+    });
+  });
+
+});
+</script>
+</body>
+</html>

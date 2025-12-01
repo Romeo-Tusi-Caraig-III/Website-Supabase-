@@ -1,0 +1,726 @@
+{% extends "admin/index.html" %}
+
+{% block head %}
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Calendar - Student Hub (Admin)</title>
+<style>
+  :root{
+    --cal-max-width: 980px;
+    --cal-col-gap: 24px;
+    --cal-card-radius: 12px;
+    --cal-shadow: 0 12px 40px rgba(12,18,30,0.06);
+    --accent:#16a34a;
+    --emerald-600:#059669;
+    --purple-600:#4f46e5;
+    --amber-600:#d97706;
+    --red-600:#dc2626;
+    --gray-50:#f9fafb;
+    --gray-200:#e5e7eb;
+    --gray-300:#d1d5db;
+    --gray-600:#4b5563;
+    --gray-700:#374151;
+    --white:#ffffff;
+
+    --cal-full-height: 84vh;
+  }
+
+  body { -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; }
+
+  .cal-page { width:100%; box-sizing:border-box; }
+
+  .cal-header {
+    background:var(--white);
+    border:1px solid var(--gray-200);
+    border-radius:14px;
+    padding:20px 22px;
+    margin-bottom:20px;
+    box-shadow:var(--cal-shadow);
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:12px;
+  }
+  .cal-header .greeting h1 { margin:0; font-size:26px; font-weight:900; color:#0f172a; }
+  .cal-header .greeting p { margin:8px 0 0; color:var(--gray-600); font-weight:600; font-size:0.95rem; }
+  .cal-header .meta { display:flex; gap:12px; align-items:center; }
+  .cal-header .add-link { color:var(--accent); font-weight:800; text-decoration:none; cursor:pointer; }
+  .cal-header .tasks-badge { display:inline-flex; align-items:center; gap:8px; padding:6px 10px; border-radius:999px; border:1px solid rgba(6,95,70,0.08); color:var(--emerald-600); font-weight:700; }
+
+  .cal-grid {
+    display:grid;
+    grid-template-columns: minmax(640px, var(--cal-max-width)) 360px;
+    gap:var(--cal-col-gap);
+    align-items:start;
+    width:100%;
+  }
+  @media (max-width:980px) { .cal-grid { grid-template-columns: 1fr; } }
+
+  .cal-card {
+    border-radius:var(--cal-card-radius);
+    border:1px solid var(--gray-200);
+    background:var(--white);
+    box-shadow:var(--cal-shadow);
+    overflow:visible;
+    position:relative;
+    width:100%;
+    min-width:0;
+    box-sizing:border-box;
+  }
+
+  .cal-card .card-header { padding:12px 16px; border-bottom:1px solid var(--gray-200); font-weight:700; display:flex; gap:12px; align-items:center; justify-content:space-between; }
+  .days-header { display:grid; grid-template-columns:repeat(7,1fr); gap:10px; padding:12px 14px; color:var(--gray-600); font-weight:700; font-size:13px; text-align:center; }
+
+  .calendar-grid {
+    display:grid;
+    grid-template-columns:repeat(7,1fr);
+    gap:12px;
+    padding:14px;
+    box-sizing:border-box;
+    height: var(--cal-full-height);
+    min-height: var(--cal-full-height);
+    overflow: visible;
+    background: transparent;
+  }
+
+  .cell {
+    min-height:110px;
+    padding:10px;
+    border-radius:10px;
+    border:1px solid var(--gray-200);
+    background:var(--white);
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    box-sizing: border-box;
+  }
+  .cell.other { background:#fbfbfb; opacity:.98; color:var(--gray-500); }
+  .cell.today { outline:2px solid rgba(5,150,105,0.12); }
+  .cell.selected { outline:3px solid rgba(22,163,74,0.18); box-shadow: inset 0 0 0 1px rgba(16,185,129,0.04); }
+
+  .date-number { font-weight:700; color:var(--gray-700); font-size:0.95rem; }
+  .event-stack { display:flex; flex-direction:column; gap:8px; margin-top:auto; }
+
+  /* pill base */
+  .pill { padding:6px 8px; border-radius:10px; font-weight:700; font-size:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; cursor:pointer; border:1px solid transparent; }
+
+  /* meetings pill */
+  .pill.meeting { background: rgba(16,185,129,0.12); color:#047857; border-color: rgba(16,185,129,0.06); }
+
+  /* task priority color variants */
+  .pill.task.low { background: rgba(239,246,255,0.9); color: #1e3a8a; border-color: rgba(99,102,241,0.12); }
+  .pill.task.medium { background: rgba(243,244,255,0.95); color: #4f46e5; border-color: rgba(99,102,241,0.12); }
+  .pill.task.high { background: rgba(254,242,242,0.95); color: var(--red-600); border-color: rgba(220,38,38,0.08); }
+
+  .upc-badge { padding:6px 8px; border-radius:8px; font-weight:700; font-size:12px; border:1px solid var(--gray-200); background:var(--gray-50); color:var(--gray-700); }
+  .upc-badge.task.low { background:#eff6ff; color:#1e3a8a; }
+  .upc-badge.task.medium { background:#eef2ff; color:#4f46e5; }
+  .upc-badge.task.high { background:#fff1f2; color:var(--red-600); }
+
+  .side-card { border-radius:var(--cal-card-radius); border:1px solid var(--gray-200); background:var(--white); box-shadow:var(--cal-shadow); overflow:hidden; }
+  .side-card .card-header { padding:12px 14px; border-bottom:1px solid rgba(0,0,0,0.04); font-weight:700; display:flex; justify-content:space-between; align-items:center; }
+  .side-card .card-body { padding:12px; max-height: calc(var(--cal-full-height) - 80px); overflow:auto; }
+
+  /* quick-edit row */
+  .task-row { border-radius:8px; padding:8px; border:1px solid rgba(0,0,0,0.04); margin-bottom:10px; display:flex; gap:8px; align-items:center; }
+  .task-row input[type="text"]{ flex:1; padding:6px 8px; border-radius:6px; border:1px solid var(--gray-200); }
+  .task-row select{ padding:6px 8px; border-radius:6px; border:1px solid var(--gray-200); }
+  .small-btn { padding:6px 8px; border-radius:6px; border:0; cursor:pointer; font-weight:700; }
+  .small-btn.primary { background:var(--emerald-600); color:white; }
+  .small-btn.ghost { background:transparent; border:1px solid var(--gray-200); color:var(--gray-700); }
+
+  .modal-backdrop { display:none; position:fixed; inset:0; background:rgba(8,12,16,0.36); align-items:center; justify-content:center; z-index:1400; padding:18px; }
+  .modal-backdrop.show { display:flex; }
+  .modal { width:min(760px,96%); background:var(--white); border-radius:12px; border:1px solid var(--gray-200); box-shadow:0 24px 60px rgba(12,18,30,0.24); overflow:hidden; display:flex; flex-direction:column; }
+  .modal-header { padding:14px 18px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(0,0,0,0.03); }
+  .modal-body { padding:16px 18px; overflow:auto; }
+  .modal-footer { padding:12px 18px; display:flex; justify-content:flex-end; gap:8px; border-top:1px solid rgba(0,0,0,0.03); background:linear-gradient(180deg,rgba(255,255,255,0), rgba(255,255,255,1)); }
+
+  .input, textarea, select { width:100%; box-sizing:border-box; padding:10px; border-radius:8px; border:1px solid var(--gray-200); background:#fff; font-size:14px; color:#0f172a; }
+  textarea { min-height:80px; resize:vertical; padding-top:10px; }
+
+  .btn { padding:8px 12px; border-radius:8px; cursor:pointer; border:0; }
+  .btn.secondary { background:#fff; border:1px solid var(--gray-300); color:var(--gray-700); }
+  .btn.primary { background:var(--accent); color:#fff; font-weight:800; }
+  .btn.danger { background:#fef2f2; border:1px solid #fecaca; color:#b91c1c; font-weight:700; }
+
+  @media (max-width:980px){
+    .calendar-grid { gap:8px; padding:10px; }
+    .cell { min-height:90px; padding:8px; }
+    :root { --cal-full-height: 68vh; }
+    .modal { width:94%; }
+  }
+
+  @media (max-width:600px){
+    :root { --cal-full-height: 56vh; }
+    .calendar-grid { gap:8px; padding:8px; }
+  }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="cal-page">
+  <div class="cal-header" role="banner" aria-label="Calendar header">
+    <div class="greeting">
+      <h1 id="calendarGreeting">Calendar</h1>
+      <p id="calendarSub"><span id="dueCount">0</span> tasks due today • <span id="weekCount">0</span> upcoming deadlines this week.</p>
+    </div>
+
+    <div class="meta" role="region" aria-label="Header actions">
+      <a id="addHeader" class="add-link">+ Add Event / Task</a>
+      <div class="tasks-badge"><span id="todayLabel">Today</span> <strong style="padding-left:6px" id="todayCount">0</strong></div>
+    </div>
+  </div>
+
+  <div class="cal-grid" role="main">
+    <div style="display:flex;justify-content:flex-start">
+      <div class="cal-card" id="calendarCard" aria-label="Calendar card">
+        <div class="card-header">
+          <div id="monthYear">Month Year</div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <button id="prevMonth" class="btn secondary" title="Previous month">‹</button>
+            <button id="nextMonth" class="btn secondary" title="Next month">›</button>
+          </div>
+        </div>
+
+        <div class="days-header" aria-hidden="true">
+          <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+        </div>
+
+        <div class="calendar-grid" id="calendarGrid" aria-live="polite" aria-label="Calendar grid"></div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="side-card" role="region" aria-label="Events for selected date">
+        <div class="card-header">
+          <div>Events & Tasks for <span id="selectedDateLabel">—</span></div>
+          <div><button id="refreshBtn" class="btn ghost">Refresh</button></div>
+        </div>
+        <div class="card-body">
+          <div id="eventsList">No date selected.</div>
+        </div>
+      </div>
+
+      <div class="side-card" role="region" aria-label="Upcoming events">
+        <div class="card-header">Upcoming This Week</div>
+        <div class="card-body" id="upcomingList">No upcoming events this week.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal (meeting/task editor) -->
+<div id="eventModal" class="modal-backdrop" aria-hidden="true">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-header">
+      <h3 id="modalTitle">Add / Edit</h3>
+      <button id="modalClose" class="btn secondary" aria-label="Close dialog">✕</button>
+    </div>
+
+    <div class="modal-body">
+      <form id="eventForm">
+        <input type="hidden" id="modalInternalId" />
+        <input type="hidden" id="modalRawId" />
+
+        <label style="display:block;margin-bottom:8px;font-weight:700">Title</label>
+        <input id="modalTitleInput" class="input" type="text" placeholder="Event or task title" required />
+
+        <div style="display:flex;gap:10px;margin-top:12px">
+          <div style="flex:1">
+            <label style="display:block;margin-bottom:8px;font-weight:700">Start / Due</label>
+            <input id="modalStart" class="input" type="datetime-local" required />
+          </div>
+          <div style="width:200px">
+            <label style="display:block;margin-bottom:8px;font-weight:700">Type</label>
+            <select id="modalType" class="input" required>
+              <option value="">Select</option><option value="class">Class</option><option value="lab">Lab</option><option value="study">Study</option><option value="assignment">Assignment</option><option value="task">Task</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:10px;margin-top:12px">
+          <div style="flex:1">
+            <label style="display:block;margin-bottom:8px;font-weight:700">Location</label>
+            <input id="modalLocation" class="input" type="text" placeholder="Location (optional)" />
+          </div>
+          <div style="width:200px">
+            <label style="display:block;margin-bottom:8px;font-weight:700">Status / Priority</label>
+            <div style="display:flex;gap:8px">
+              <select id="modalStatus" class="input" style="flex:1">
+                <option>pending</option><option>Not Started</option><option>In Progress</option><option>Completed</option>
+              </select>
+              <select id="modalPriority" class="input" style="width:110px">
+                <option value="medium">Medium</option><option value="high">High</option><option value="low">Low</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <label style="display:block;margin-top:12px;margin-bottom:8px;font-weight:700">Notes / Description</label>
+        <textarea id="modalDescription" placeholder="Purpose / notes (optional)"></textarea>
+      </form>
+    </div>
+
+    <div class="modal-footer">
+      <button id="modalDelete" class="btn danger" style="display:none">Delete</button>
+      <button id="modalCancel" class="btn secondary">Cancel</button>
+      <button id="modalSave" class="btn primary">Save</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function(){
+  const MEETINGS_API = '/api/meetings';
+  const TASKS_API = '/api/tasks';
+  const calendarGrid = document.getElementById('calendarGrid');
+  const monthYear = document.getElementById('monthYear');
+  const eventsList = document.getElementById('eventsList');
+  const upcomingList = document.getElementById('upcomingList');
+  const selectedDateLabel = document.getElementById('selectedDateLabel');
+  const prevMonth = document.getElementById('prevMonth');
+  const nextMonth = document.getElementById('nextMonth');
+  const refreshBtn = document.getElementById('refreshBtn');
+
+  const addHeader = document.getElementById('addHeader');
+
+  // modal elements
+  const modalBackdrop = document.getElementById('eventModal');
+  const modalForm = document.getElementById('eventForm');
+  const modalInternalId = document.getElementById('modalInternalId'); // internal id form: 'meet_<id>' or 'task_<id>' or local
+  const modalRawId = document.getElementById('modalRawId'); // numeric id for API operations
+  const modalTitleInput = document.getElementById('modalTitleInput');
+  const modalStart = document.getElementById('modalStart');
+  const modalType = document.getElementById('modalType');
+  const modalLocation = document.getElementById('modalLocation');
+  const modalDescription = document.getElementById('modalDescription');
+  const modalStatus = document.getElementById('modalStatus');
+  const modalPriority = document.getElementById('modalPriority');
+  const modalClose = document.getElementById('modalClose');
+  const modalCancel = document.getElementById('modalCancel');
+  const modalSave = document.getElementById('modalSave');
+  const modalDelete = document.getElementById('modalDelete');
+
+  let currentDate = new Date();
+  let selectedDate = null;
+  let items = []; // merged meetings + tasks (each item: { internalId, source:'meeting'|'task', rawId, title, datetime, type, purpose, location, status, priority })
+
+  function pad(n){ return String(n).padStart(2,'0'); }
+  function toInputLocal(d){
+    if(!d) return '';
+    const date = new Date(d);
+    if(isNaN(date.getTime())) return '';
+    return date.getFullYear() + '-' + pad(date.getMonth()+1) + '-' + pad(date.getDate()) + 'T' + pad(date.getHours()) + ':' + pad(date.getMinutes());
+  }
+  function parseDateLike(val){
+    if(!val) return null;
+    try {
+      return new Date(val);
+    } catch(e){ return null; }
+  }
+  function isSameDate(a,b){ return a && b && a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate(); }
+
+  function pillClassForItem(it){
+    if(it.source === 'meeting') return 'pill meeting';
+    // tasks prioritized
+    const pr = (it.priority || 'medium').toLowerCase();
+    return 'pill task ' + (pr === 'high' ? 'high' : pr === 'low' ? 'low' : 'medium');
+  }
+
+  function badgeClassForItem(it){
+    if(it.source === 'meeting') return 'upc-badge';
+    const pr = (it.priority || 'medium').toLowerCase();
+    return 'upc-badge task ' + (pr === 'high' ? 'high' : pr === 'low' ? 'low' : 'medium');
+  }
+
+  function renderCalendar(){
+    calendarGrid.innerHTML = '';
+    const y = currentDate.getFullYear(), m = currentDate.getMonth();
+    monthYear.textContent = currentDate.toLocaleString(undefined, { month: 'long' }) + ' ' + y;
+    const first = new Date(y,m,1), startDay = first.getDay(), daysInMonth = new Date(y,m+1,0).getDate();
+
+    for(let i=0;i<startDay;i++){ const ph = document.createElement('div'); ph.className='cell other'; ph.innerHTML='&nbsp;'; calendarGrid.appendChild(ph); }
+
+    for(let d=1; d<=daysInMonth; d++){
+      const cellDate = new Date(y,m,d);
+      const cell = document.createElement('div'); cell.className='cell';
+      const dn = document.createElement('div'); dn.className='date-number'; dn.textContent = d; cell.appendChild(dn);
+      if(isSameDate(cellDate, new Date())) cell.classList.add('today');
+      if(selectedDate && isSameDate(cellDate, selectedDate)) cell.classList.add('selected');
+
+      const dayItems = items.filter(it => it.datetime && isSameDate(new Date(it.datetime), cellDate));
+      const stack = document.createElement('div'); stack.className = 'event-stack';
+      dayItems.slice(0,3).forEach(it => {
+        const pill = document.createElement('div'); pill.className = pillClassForItem(it);
+        pill.textContent = it.title.length > 28 ? it.title.substring(0,28) + '…' : it.title;
+        pill.title = it.title;
+        pill.addEventListener('click', (e)=>{ e.stopPropagation(); openModalForItem(it.internalId); });
+        stack.appendChild(pill);
+      });
+      if(dayItems.length > 3){
+        const more = document.createElement('div'); more.className='pill'; more.textContent = `+${dayItems.length-3} more`; stack.appendChild(more);
+      }
+      cell.appendChild(stack);
+
+      cell.addEventListener('click', ()=>{ selectedDate = new Date(cellDate.getFullYear(), cellDate.getMonth(), cellDate.getDate()); renderCalendar(); renderEventsForSelected(); });
+
+      calendarGrid.appendChild(cell);
+    }
+  }
+
+  function renderEventsForSelected(){
+    const box = eventsList;
+    box.innerHTML = '';
+    selectedDateLabel.textContent = selectedDate ? selectedDate.toLocaleDateString(undefined,{month:'long',day:'numeric'}) : '—';
+    if(!selectedDate){ box.textContent = 'No date selected.'; return; }
+    const dayItems = items.filter(it => it.datetime && isSameDate(new Date(it.datetime), selectedDate)).sort((a,b)=> new Date(a.datetime)-new Date(b.datetime));
+    if(dayItems.length === 0){ box.textContent='No events for this date.'; return; }
+    // For each item: show meeting as read block (click to open modal), show tasks with inline quick-edit controls
+    dayItems.forEach(it => {
+      if(it.source === 'meeting'){
+        const wrap = document.createElement('div'); wrap.style.marginBottom='12px';
+        const header = document.createElement('div'); header.style.display='flex'; header.style.justifyContent='space-between';
+        const t = document.createElement('div'); t.style.fontWeight='700'; t.textContent = it.title;
+        const time = document.createElement('div'); time.style.color='var(--emerald-600)'; time.style.fontWeight='700';
+        time.textContent = it.datetime ? new Date(it.datetime).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'}) : '';
+        header.appendChild(t); header.appendChild(time); wrap.appendChild(header);
+        if(it.location){ const loc = document.createElement('div'); loc.style.color='var(--gray-600)'; loc.textContent = it.location; wrap.appendChild(loc); }
+        if(it.purpose){ const p = document.createElement('div'); p.style.color='var(--gray-600)'; p.textContent = it.purpose; wrap.appendChild(p); }
+        wrap.addEventListener('click', ()=> openModalForItem(it.internalId));
+        box.appendChild(wrap);
+        return;
+      }
+      // task: inline quick-edit row
+      const row = document.createElement('div'); row.className='task-row';
+      const titleIn = document.createElement('input'); titleIn.type='text'; titleIn.value = it.title || ''; titleIn.placeholder='Task title';
+      const timeIn = document.createElement('input'); timeIn.type='time'; timeIn.value = it.datetime ? (new Date(it.datetime)).toLocaleTimeString([], {hour12:false, hour:'2-digit', minute:'2-digit'}) : '09:00';
+      const prSel = document.createElement('select'); prSel.innerHTML = '<option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option>'; prSel.value = it.priority || 'medium';
+      const statusSel = document.createElement('select'); statusSel.innerHTML = '<option value="pending">Pending</option><option value="Not Started">Not Started</option><option value="In Progress">In Progress</option><option value="Completed">Completed</option>'; statusSel.value = it.status || 'pending';
+      const saveBtn = document.createElement('button'); saveBtn.className='small-btn primary'; saveBtn.textContent='Save';
+      const delBtn = document.createElement('button'); delBtn.className='small-btn ghost'; delBtn.textContent='Delete';
+
+      // layout: titleIn | timeIn | prSel | statusSel | saveBtn | delBtn
+      titleIn.style.flex='1';
+      timeIn.style.width='84px';
+      prSel.style.width='110px';
+      statusSel.style.width='120px';
+
+      saveBtn.addEventListener('click', async (e)=>{
+        e.preventDefault();
+        const newTitle = titleIn.value.trim();
+        const timeVal = timeIn.value || '09:00';
+        const priority = prSel.value || 'medium';
+        const status = statusSel.value || 'pending';
+        if(!newTitle){ alert('Task needs a title'); return; }
+        // build due datetime from selectedDate + time
+        const sd = new Date(selectedDate);
+        const [hh, mm] = timeVal.split(':').map(z=>parseInt(z,10)||0);
+        sd.setHours(hh, mm, 0, 0);
+        // patch task via API
+        const taskId = it.rawId;
+        const payload = { title: newTitle, due: sd.toISOString(), priority: priority, notes: it.purpose || '', status: status };
+        try {
+          const res = await fetch(TASKS_API + '/' + taskId, { method:'PATCH', credentials:'same-origin', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
+          if(!res.ok) throw new Error('patch failed');
+          // update local item
+          it.title = newTitle; it.datetime = sd.toISOString(); it.priority = priority; it.status = status;
+          renderCalendar(); renderEventsForSelected(); renderUpcoming();
+        } catch(err){ console.warn('update task failed', err); alert('Save failed — check console for details'); }
+      });
+
+      delBtn.addEventListener('click', async (e)=>{
+        e.preventDefault();
+        if(!confirm('Delete this task?')) return;
+        const taskId = it.rawId;
+        try {
+          const res = await fetch(TASKS_API + '/' + taskId, { method:'DELETE', credentials:'same-origin' });
+          if(!res.ok) throw new Error('delete failed');
+          items = items.filter(x => !(x.source==='task' && String(x.rawId) === String(taskId)));
+          renderCalendar(); renderEventsForSelected(); renderUpcoming();
+        } catch(err){ console.warn('delete task failed', err); alert('Delete failed — check console'); }
+      });
+
+      row.appendChild(titleIn);
+      row.appendChild(timeIn);
+      row.appendChild(prSel);
+      row.appendChild(statusSel);
+      row.appendChild(saveBtn);
+      row.appendChild(delBtn);
+
+      box.appendChild(row);
+    });
+  }
+
+  function renderUpcoming(){
+    upcomingList.innerHTML = '';
+    const today = new Date(); today.setHours(0,0,0,0);
+    const weekTo = new Date(today); weekTo.setDate(today.getDate()+7);
+    const upc = items.filter(it => it.datetime && (new Date(it.datetime).setHours(0,0,0,0) >= today.getTime()) && (new Date(it.datetime).setHours(0,0,0,0) <= weekTo.getTime())).sort((a,b) => new Date(a.datetime) - new Date(b.datetime));
+    if(!upc.length){ upcomingList.textContent='No upcoming events this week.'; document.getElementById('weekCount').textContent='0'; return; }
+    document.getElementById('weekCount').textContent = upc.length;
+    upc.forEach(it => {
+      const r = document.createElement('div'); r.style.display='flex'; r.style.gap='12px'; r.style.padding='8px 0'; r.style.alignItems='center';
+      const badge = document.createElement('div'); badge.className = badgeClassForItem(it); badge.textContent = it.type || (it.source==='task' ? 'Task' : '');
+      const date = document.createElement('div'); date.style.fontWeight='700'; date.textContent = it.datetime ? new Date(it.datetime).toLocaleDateString(undefined,{month:'short',day:'numeric'}) : '';
+      const title = document.createElement('div'); title.style.fontWeight='700'; title.textContent = it.title;
+      const meta = document.createElement('div'); meta.style.marginLeft='auto'; meta.style.color='var(--gray-600)'; meta.textContent = it.datetime ? new Date(it.datetime).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'}) : '';
+      r.appendChild(badge); r.appendChild(date); r.appendChild(title); r.appendChild(meta);
+      r.addEventListener('click', ()=> openModalForItem(it.internalId));
+      upcomingList.appendChild(r);
+    });
+  }
+
+  /* ---------- API bridging ---------- */
+
+  async function loadAll(){
+    try {
+      const [mRes, tRes] = await Promise.all([ fetch(MEETINGS_API, { credentials:'same-origin' }), fetch(TASKS_API + '?filter=all&sort=due', { credentials:'same-origin' }) ]);
+      const mrows = mRes.ok ? await mRes.json() : [];
+      const trows = tRes.ok ? await tRes.json() : [];
+
+      const mappedMeetings = (mrows||[]).map(r => ({
+        internalId: 'meet_' + r.id,
+        source: 'meeting',
+        rawId: r.id,
+        title: r.title,
+        datetime: r.datetime,
+        type: r.type || '',
+        purpose: r.purpose || '',
+        location: r.location || r.meetLink || '',
+        status: r.status || 'Not Started',
+        priority: 'medium'
+      }));
+
+      const mappedTasks = (trows||[]).map(t => {
+        let due = t.due || t.dueDate || null;
+        if(due && /^\d{4}-\d{2}-\d{2}$/.test(String(due))) due = String(due) + 'T09:00:00';
+        return {
+          internalId: 'task_' + t.id,
+          source: 'task',
+          rawId: t.id,
+          title: t.title || 'Task',
+          datetime: due || null,
+          type: t.type || 'assignment',
+          purpose: t.notes || t.description || '',
+          location: '',
+          status: t.status || (t.completed ? 'Completed' : 'pending'),
+          priority: (t.priority || 'medium').toLowerCase()
+        };
+      });
+
+      items = [].concat(mappedMeetings, mappedTasks);
+
+    } catch(e){
+      console.warn('loadAll failed', e);
+      items = [];
+    }
+
+    items.sort((a,b)=>{
+      const ad = a.datetime ? new Date(a.datetime).getTime() : Number.MAX_SAFE_INTEGER;
+      const bd = b.datetime ? new Date(b.datetime).getTime() : Number.MAX_SAFE_INTEGER;
+      return ad - bd;
+    });
+
+    // update counts
+    const today = new Date(); today.setHours(0,0,0,0);
+    const dueToday = items.filter(it => it.source==='task' && it.datetime && (new Date(it.datetime).setHours(0,0,0,0) === today.getTime())).length;
+    document.getElementById('todayCount').textContent = dueToday;
+    document.getElementById('dueCount').textContent = dueToday;
+
+    renderCalendar();
+    renderUpcoming();
+    renderEventsForSelected();
+  }
+
+  async function createMeeting(payload){
+    try {
+      const res = await fetch(MEETINGS_API, { method:'POST', credentials:'same-origin', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
+      if(!res.ok) throw new Error('create failed');
+      const data = await res.json();
+      const created = data.meeting || null;
+      if(created) items.push({
+        internalId: 'meet_' + created.id, source:'meeting', rawId: created.id, title: created.title, datetime: created.datetime, type: created.type, purpose: created.purpose, location: created.location, status: created.status, priority:'medium'
+      });
+    } catch(e){
+      console.warn('createMeeting failed', e);
+      items.push({ internalId: 'local_meet_' + Date.now(), source:'meeting', rawId:null, title: payload.title, datetime: payload.datetime, type: payload.type, purpose: payload.purpose, location: payload.location, status: payload.status, priority:'medium' });
+    }
+    renderCalendar(); renderEventsForSelected(); renderUpcoming();
+  }
+
+  async function updateMeetingApi(id, updates){
+    try {
+      const res = await fetch(MEETINGS_API + '/' + id, { method:'PATCH', credentials:'same-origin', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(updates) });
+      if(!res.ok) throw new Error('update failed');
+      const idx = items.findIndex(x => x.source==='meeting' && String(x.rawId) === String(id));
+      if(idx !== -1) Object.assign(items[idx], updates);
+    } catch(e){ console.warn('updateMeetingApi failed', e); }
+    renderCalendar(); renderEventsForSelected(); renderUpcoming();
+  }
+
+  async function deleteMeetingApi(id){
+    try {
+      const res = await fetch(MEETINGS_API + '/' + id, { method:'DELETE', credentials:'same-origin' });
+      if(!res.ok) throw new Error('delete failed');
+      items = items.filter(x => !(x.source==='meeting' && String(x.rawId) === String(id)));
+    } catch(e){ console.warn('deleteMeetingApi failed', e); items = items.filter(x => !(x.source==='meeting' && String(x.rawId) === String(id))); }
+    renderCalendar(); renderEventsForSelected(); renderUpcoming();
+  }
+
+  async function createTaskApi(payload){
+    try {
+      const res = await fetch(TASKS_API, { method:'POST', credentials:'same-origin', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
+      if(!res.ok) throw new Error('create task failed');
+      const data = await res.json(); const t = data.task || null;
+      if(t) {
+        let due = t.due || null;
+        if(due && /^\d{4}-\d{2}-\d{2}$/.test(String(due))) due = due + 'T09:00:00';
+        items.push({ internalId:'task_'+t.id, source:'task', rawId: t.id, title: t.title, datetime: due, type: t.type || 'assignment', purpose: t.notes || '', status: t.status || (t.completed ? 'Completed' : 'pending'), priority: (t.priority||'medium') });
+      }
+    } catch(e){ console.warn('createTaskApi failed', e); items.push({ internalId:'local_task_' + Date.now(), source:'task', rawId:null, title: payload.title, datetime: payload.due || payload.datetime || null, type: payload.type || 'assignment', purpose: payload.notes || '', status: payload.status || 'pending', priority: payload.priority || 'medium' }); }
+    renderCalendar(); renderEventsForSelected(); renderUpcoming();
+  }
+
+  async function updateTaskApi(id, updates){
+    try {
+      const res = await fetch(TASKS_API + '/' + id, { method:'PATCH', credentials:'same-origin', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(updates) });
+      if(!res.ok) throw new Error('update task failed');
+      const idx = items.findIndex(x => x.source==='task' && String(x.rawId) === String(id));
+      if(idx !== -1) {
+        if(updates.title !== undefined) items[idx].title = updates.title;
+        if(updates.due !== undefined) items[idx].datetime = updates.due;
+        if(updates.priority !== undefined) items[idx].priority = updates.priority;
+        if(updates.notes !== undefined) items[idx].purpose = updates.notes;
+        if(updates.status !== undefined) items[idx].status = updates.status;
+      }
+    } catch(e){ console.warn('updateTaskApi failed', e); }
+    renderCalendar(); renderEventsForSelected(); renderUpcoming();
+  }
+
+  async function deleteTaskApi(id){
+    try {
+      const res = await fetch(TASKS_API + '/' + id, { method:'DELETE', credentials:'same-origin' });
+      if(!res.ok) throw new Error('delete task failed');
+      items = items.filter(x => !(x.source==='task' && String(x.rawId) === String(id)));
+    } catch(e){ console.warn('deleteTaskApi failed', e); items = items.filter(x => !(x.source==='task' && String(x.rawId) === String(id))); }
+    renderCalendar(); renderEventsForSelected(); renderUpcoming();
+  }
+
+  /* ---------- Modal and UI ---------- */
+
+  function showModal(){ modalBackdrop.classList.add('show'); modalBackdrop.setAttribute('aria-hidden','false'); setTimeout(()=> modalTitleInput.focus(), 80); }
+  function hideModal(){ modalBackdrop.classList.remove('show'); modalBackdrop.setAttribute('aria-hidden','true'); clearModal(); }
+  function clearModal(){ modalInternalId.value=''; modalRawId.value=''; modalForm.reset(); modalDelete.style.display='none'; modalSave.style.display='inline-block'; modalTitleInput.readOnly=false; modalStart.readOnly=false; modalType.disabled=false; modalLocation.readOnly=false; modalDescription.readOnly=false; modalStatus.disabled=false; modalPriority.disabled=false; }
+
+  function openModalForItem(internalId){
+    const it = items.find(x => x.internalId === internalId || x.id === internalId) || null;
+    if(!it) return;
+    modalInternalId.value = it.internalId || '';
+    modalRawId.value = it.rawId || '';
+    modalTitleInput.value = it.title || '';
+    modalStart.value = it.datetime ? toInputLocal(it.datetime) : '';
+    modalType.value = it.type || (it.source==='task' ? 'task' : '');
+    modalLocation.value = it.location || '';
+    modalDescription.value = it.purpose || '';
+    modalStatus.value = it.status || (it.source==='task' ? 'pending' : 'Not Started');
+    modalPriority.value = it.priority || 'medium';
+    modalDelete.style.display = 'inline-block';
+    document.getElementById('modalTitle').textContent = it.source==='task' ? 'Edit Task' : 'Edit Event';
+    showModal();
+  }
+
+  function openCreateModal(prefillDate){
+    clearModal();
+    document.getElementById('modalTitle').textContent = 'Add Event / Task';
+    modalStart.value = prefillDate ? toInputLocal(prefillDate) : '';
+    modalPriority.value = 'medium';
+    modalStatus.value = 'pending';
+    showModal();
+  }
+
+  modalClose.addEventListener('click', hideModal);
+  modalCancel.addEventListener('click', hideModal);
+  modalBackdrop.addEventListener('click', (e)=>{ if(e.target === modalBackdrop) hideModal(); });
+
+  modalSave.addEventListener('click', async (e)=>{
+    e.preventDefault();
+    const internal = modalInternalId.value;
+    const raw = modalRawId.value;
+    const title = modalTitleInput.value.trim();
+    const startVal = modalStart.value;
+    const type = modalType.value;
+    const loc = modalLocation.value.trim();
+    const notes = modalDescription.value.trim();
+    const status = modalStatus.value;
+    const priority = modalPriority.value || 'medium';
+    if(!title || !startVal || !type){ alert('Please fill Title, Start/Due, and Type.'); return; }
+
+    // If editing existing:
+    if(internal && internal.startsWith('task_') || (raw && items.find(x=>String(x.rawId)===String(raw) && x.source==='task'))){
+      const taskId = raw || internal.replace('task_','');
+      const dueIso = new Date(startVal).toISOString();
+      const payload = { title: title, due: dueIso, type: type, notes: notes, status: status, priority: priority };
+      await updateTaskApi(taskId, payload);
+      hideModal(); return;
+    }
+
+    if(internal && internal.startsWith('meet_') || (raw && items.find(x=>String(x.rawId)===String(raw) && x.source==='meeting'))){
+      const meetId = raw || internal.replace('meet_','');
+      const payload = { title: title, datetime: new Date(startVal).toISOString(), type: type, purpose: notes, location: loc, status: status };
+      await updateMeetingApi(meetId, payload);
+      hideModal(); return;
+    }
+
+    // New: create task vs meeting depending on type (task or 'task' selected)
+    if(type === 'task' || type === 'assignment' || type === 'study'){
+      const payload = { title: title, due: new Date(startVal).toISOString(), priority: priority, notes: notes, type: type, completed: false };
+      await createTaskApi(payload);
+      hideModal(); return;
+    } else {
+      const payload = { title: title, datetime: new Date(startVal).toISOString(), location: loc, type: type, purpose: notes, status: status, attendees: [] };
+      await createMeeting(payload);
+      hideModal(); return;
+    }
+  });
+
+  modalDelete.addEventListener('click', async (e)=>{
+    e.preventDefault();
+    if(!confirm('Delete this item?')) return;
+    const internal = modalInternalId.value;
+    const raw = modalRawId.value;
+    if(internal && internal.startsWith('task_') || (raw && items.find(x=>String(x.rawId)===String(raw) && x.source==='task'))){
+      const id = raw || internal.replace('task_',''); await deleteTaskApi(id); hideModal(); return;
+    }
+    if(internal && internal.startsWith('meet_') || (raw && items.find(x=>String(x.rawId)===String(raw) && x.source==='meeting'))){
+      const id = raw || internal.replace('meet_',''); await deleteMeetingApi(id); hideModal(); return;
+    }
+    // fallback: remove local
+    items = items.filter(x => x.internalId !== internal); hideModal(); renderCalendar(); renderEventsForSelected(); renderUpcoming();
+  });
+
+  // header buttons
+  prevMonth.addEventListener('click', ()=>{ currentDate.setMonth(currentDate.getMonth()-1); renderCalendar(); });
+  nextMonth.addEventListener('click', ()=>{ currentDate.setMonth(currentDate.getMonth()+1); renderCalendar(); });
+  refreshBtn.addEventListener('click', ()=> loadAll());
+
+  if(addHeader){
+    addHeader.addEventListener('click', (e)=>{ e.preventDefault(); const d = selectedDate ? new Date(selectedDate) : new Date(); d.setHours(9,0,0,0); openCreateModal(d); });
+  }
+
+  // helpers exposed
+  window.gotoMonth = function(y, monthIndex){ if(typeof y!=='number' || typeof monthIndex!=='number') return; currentDate = new Date(y, monthIndex, 1); renderCalendar(); };
+  window.viewEventsForDate = function(dateISO){ try { const d = (dateISO instanceof Date)? dateISO : new Date(dateISO); if(isNaN(d)) return; selectedDate = new Date(d.getFullYear(), d.getMonth(), d.getDate()); renderCalendar(); setTimeout(renderEventsForSelected,60); }catch(e){console.warn(e);} };
+  window.reloadCalendarMeetings = loadAll;
+
+  // init
+  loadAll();
+
+  // keyboard nav
+  document.addEventListener('keydown', (e)=>{ if(e.key==='ArrowLeft'){ currentDate.setMonth(currentDate.getMonth()-1); renderCalendar(); } if(e.key==='ArrowRight'){ currentDate.setMonth(currentDate.getMonth()+1); renderCalendar(); } });
+
+})();
+</script>
+{% endblock %}

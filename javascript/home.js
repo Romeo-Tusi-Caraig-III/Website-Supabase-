@@ -1,0 +1,378 @@
+
+/* ========= Utilities ========= */
+function escapeHtml(str){
+  return String(str || '').replace(/[&<>"']/g, function(m){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m];});
+}
+function capitalize(s){ if(!s) return s; return s.charAt(0).toUpperCase() + s.slice(1); }
+function showToast(message, type = 'info', duration = 3500){
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.textContent = message;
+  toast.style.position = 'fixed';
+  toast.style.right = '20px';
+  toast.style.bottom = '20px';
+  toast.style.padding = '10px 14px';
+  toast.style.borderRadius = '10px';
+  toast.style.boxShadow = '0 6px 20px rgba(12,18,30,0.08)';
+  toast.style.zIndex = 9999;
+  toast.style.fontWeight = 700;
+  toast.style.background = (type === 'error') ? '#fee2e2' : (type === 'success') ? '#dcfce7' : '#eef2ff';
+  toast.style.color = (type === 'error') ? '#991b1b' : (type === 'success') ? '#065f46' : '#1e40af';
+  document.body.appendChild(toast);
+  setTimeout(()=> { toast.style.opacity = '0'; setTimeout(()=> toast.remove(), 300); }, duration);
+}
+
+/* ========= Date display ========= */
+function formatToday(){
+  const el = document.getElementById('todayDate');
+  if(!el) return;
+  const opts={ weekday:'long', month:'long', day:'numeric' };
+  el.textContent = new Date().toLocaleDateString(undefined,opts);
+}
+formatToday();
+
+/* ========= DOM render helpers ========= */
+function renderMeetings(meetings){
+  const list = document.getElementById('scheduleList');
+  if(!list) return;
+  list.innerHTML = '';
+  if(!Array.isArray(meetings) || meetings.length === 0){
+    const empty = document.createElement('div');
+    empty.className = 'muted';
+    empty.style.padding = '10px 0';
+    empty.textContent = 'No meetings scheduled.';
+    list.appendChild(empty);
+    return;
+  }
+  meetings.forEach(m => {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'meeting-entry';
+    const when = m.datetime ? formatDateTime(m.datetime) : 'TBD';
+    const location = m.location || (m.meetLink ? m.meetLink : '—');
+    wrapper.innerHTML = `
+      <div>
+        <h4>${escapeHtml(m.title)}</h4>
+        <p>${escapeHtml(location)}</p>
+      </div>
+      <div style="font-weight:700;color:var(--accent-strong);">${escapeHtml(when)}</div>
+    `;
+    wrapper.dataset.id = m.id || '';
+    list.appendChild(wrapper);
+  });
+}
+
+function renderTasks(tasks){
+  const list = document.getElementById('taskList');
+  if(!list) return;
+  list.innerHTML = '';
+  if(!Array.isArray(tasks) || tasks.length === 0){
+    const empty = document.createElement('div');
+    empty.className = 'muted';
+    empty.style.padding = '10px 0';
+    empty.textContent = 'No tasks found.';
+    list.appendChild(empty);
+    return;
+  }
+  tasks.forEach(t => {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'task-entry';
+    const pr = (t.priority || 'medium').toLowerCase();
+    const prClass = pr === 'high' ? 'high' : (pr === 'low' ? 'low' : 'medium');
+    const dueText = t.due || 'TBD';
+    wrapper.innerHTML = `
+      <div>
+        <h4>${escapeHtml(t.title)}</h4>
+        <p>Due: ${escapeHtml(dueText)}</p>
+      </div>
+      <span class="badge ${prClass}">${capitalize(pr)}</span>
+    `;
+    wrapper.dataset.id = t.id || '';
+    list.appendChild(wrapper);
+  });
+}
+
+function formatDateTime(iso){
+  try {
+    const dt = new Date(iso);
+    if(isNaN(dt)) return iso;
+    // For compact display: "Tue, Sep 2 • 3:30 PM"
+    const date = dt.toLocaleDateString(undefined, { weekday:'short', month:'short', day:'numeric' });
+    const time = dt.toLocaleTimeString(undefined, { hour:'numeric', minute:'2-digit' });
+    return `${date} • ${time}`;
+  } catch (e) { return iso; }
+}
+
+/* ========= API utilities ========= */
+function apiGet(url){
+  return fetch(url, { method: 'GET', credentials: 'same-origin', headers: { 'Accept': 'application/json' } });
+}
+function getCsrfToken(){
+  const match = document.cookie.match(/(^|;\s*)csrf_token=([^;]+)/);
+  return match ? decodeURIComponent(match[2]) : null;
+}
+function apiPost(url, body){
+  const csrf = getCsrfToken();
+  const headers = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
+  if(csrf) headers['X-CSRFToken'] = csrf;
+  return fetch(url, { method: 'POST', credentials: 'same-origin', headers, body: JSON.stringify(body) });
+}
+
+/* ========= Fetch & populate on load ========= */
+async function fetchAndPopulate(){
+  // show temporary loading placeholders
+  const scheduleList = document.getElementById('scheduleList');
+  const taskList = document.getElementById('taskList');
+  if(scheduleList) scheduleList.innerHTML = '<div class="muted">Loading meetings…</div>';
+  if(taskList) taskList.innerHTML = '<div class="muted">Loading tasks…</div>';
+
+  // fetch meetings & tasks
+  try {
+    const [mRes, tRes] = await Promise.all([apiGet('/api/meetings'), apiGet('/api/tasks')]);
+    if(!mRes.ok){
+      const err = await safeJson(mRes);
+      console.error('Meetings fetch error', err);
+      showToast('Failed to load meetings', 'error');
+      if(scheduleList) scheduleList.innerHTML = '<div class="muted">Unable to load meetings.</div>';
+    } else {
+      const meetings = await mRes.json();
+      renderMeetings(meetings);
+    }
+
+    if(!tRes.ok){
+      const err = await safeJson(tRes);
+      console.error('Tasks fetch error', err);
+      showToast('Failed to load tasks', 'error');
+      if(taskList) taskList.innerHTML = '<div class="muted">Unable to load tasks.</div>';
+    } else {
+      const tasks = await tRes.json();
+      renderTasks(tasks);
+    }
+  } catch (err) {
+    console.error('Fetch error', err);
+    if(scheduleList) scheduleList.innerHTML = '<div class="muted">Unable to load meetings.</div>';
+    if(taskList) taskList.innerHTML = '<div class="muted">Unable to load tasks.</div>';
+    showToast('Network error while loading dashboard', 'error');
+  }
+}
+async function safeJson(res){
+  try { return await res.json(); } catch(e){ return {error: 'Invalid JSON'}; }
+}
+
+/* ========= Modal & submit logic (keeps previous API-backed behavior) ========= */
+function openModal(mode){
+  const modal = document.getElementById('modal');
+  const title = document.getElementById('modalTitle');
+  document.getElementById('modalMode').value = mode || 'task';
+  document.getElementById('modalForm').reset();
+  Array.from(document.querySelectorAll('.field')).forEach(f => f.classList.remove('has-value'));
+  if(mode === 'meeting'){
+    title.textContent = 'Schedule Meeting';
+    document.getElementById('prioritySelect').parentNode.style.display = 'none';
+    document.getElementById('subInput').placeholder = 'Location (e.g. Room 201)';
+  } else {
+    title.textContent = 'Add Task';
+    document.getElementById('prioritySelect').parentNode.style.display = '';
+    document.getElementById('subInput').placeholder = 'Short description (e.g. Due date)';
+  }
+  modal.style.display = 'flex';
+  modal.setAttribute('aria-hidden','false');
+  setTimeout(() => document.getElementById('titleInput').focus(), 120);
+}
+function closeModal(){
+  const modal = document.getElementById('modal');
+  modal.style.display = 'none';
+  modal.setAttribute('aria-hidden','true');
+  document.getElementById('modalForm').reset();
+}
+document.addEventListener('input', function(e){
+  const field = e.target.closest('.field');
+  if(!field) return;
+  if(e.target.value && e.target.value.trim() !== '') field.classList.add('has-value');
+  else field.classList.remove('has-value');
+});
+document.getElementById('openMeetingModal')?.addEventListener('click', () => openModal('meeting'));
+document.getElementById('openTaskModal')?.addEventListener('click', () => openModal('task'));
+document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeModal(); });
+
+/* ========= submitModal uses existing API endpoints (optimistic update retained) ========= */
+async function submitModal(){
+  const mode = document.getElementById('modalMode').value || 'task';
+  const title = document.getElementById('titleInput').value.trim();
+  const sub = document.getElementById('subInput').value.trim();
+  const time = document.getElementById('timeInput').value.trim();
+  const priority = document.getElementById('prioritySelect').value;
+  const notes = document.getElementById('notesInput').value.trim();
+
+  if(!title){ alert('Please add a title.'); return; }
+
+  if(mode === 'meeting'){
+    // For meetings we expect datetime in ISO-like format; if user provided a friendly time we'll send it as-is and let server parse/validate.
+    const payload = { title, datetime: time || '', location: sub || notes || '', attendees: [] };
+    // optimistic UI
+    const node = createMeetingNode({title, location: payload.location, time: payload.datetime || 'TBD'});
+    document.getElementById('scheduleList').insertAdjacentElement('afterbegin', node);
+    try {
+      const res = await apiPost('/api/meetings', payload);
+      if(!res.ok) throw await safeJson(res);
+      const data = await res.json();
+      // server returns { success:true, meeting: {...} } per app.py
+      const meeting = data.meeting || data;
+      if(meeting && meeting.id) node.dataset.id = meeting.id;
+      showToast('Meeting scheduled', 'success');
+    } catch (err) {
+      node.remove();
+      console.error('Meeting save error', err);
+      showToast('Failed to schedule meeting', 'error');
+    } finally {
+      closeModal();
+    }
+  } else {
+    const payload = { title, due: time || sub || '', priority: priority || 'medium', notes: notes || '' };
+    const node = createTaskNode(payload);
+    document.getElementById('taskList').insertAdjacentElement('afterbegin', node);
+    try {
+      const res = await apiPost('/api/tasks', payload);
+      if(!res.ok) throw await safeJson(res);
+      const data = await res.json();
+      const task = data.task || data;
+      if(task && task.id) node.dataset.id = task.id;
+      showToast('Task added', 'success');
+    } catch (err) {
+      node.remove();
+      console.error('Task save error', err);
+      showToast('Failed to add task', 'error');
+    } finally {
+      closeModal();
+    }
+  }
+}
+window.submitModal = submitModal;
+
+/* Optimistic DOM creators (same as earlier) */
+function createMeetingNode({title, location, time}){
+  const wrapper = document.createElement('div');
+  wrapper.className = 'meeting-entry';
+  wrapper.innerHTML = `
+    <div>
+      <h4>${escapeHtml(title)}</h4>
+      <p>${escapeHtml(location || '—')}</p>
+    </div>
+    <div style="font-weight:700;color:var(--accent-strong);">${escapeHtml(time || 'TBD')}</div>
+  `;
+  return wrapper;
+}
+function createTaskNode({title, due, priority}){
+  const wrapper = document.createElement('div');
+  wrapper.className = 'task-entry';
+  const prClass = priority === 'high' ? 'high' : (priority === 'low' ? 'low' : 'medium');
+  wrapper.innerHTML = `
+    <div>
+      <h4>${escapeHtml(title)}</h4>
+      <p>Due: ${escapeHtml(due || 'TBD')}</p>
+    </div>
+    <span class="badge ${prClass}">${capitalize(priority || 'medium')}</span>
+  `;
+  return wrapper;
+}
+
+/* ========= Wire quick-action navigation (data-url) ========= */
+document.addEventListener('click', function(e){
+  const btn = e.target.closest && e.target.closest('[data-url]');
+  if (!btn) return;
+  const url = btn.getAttribute('data-url');
+  if (url) window.location.href = url;
+});
+
+/* ========= Greeting + counts logic ========= */
+(function(){
+  function salutation(){
+    const h = new Date().getHours();
+    if (h < 12) return 'Good morning';
+    if (h < 18) return 'Good afternoon';
+    return 'Good evening';
+  }
+  function nameFromCard(card){
+    if(!card) return 'Student';
+    const first = (card.dataset.first || '').trim();
+    const last  = (card.dataset.last || '').trim();
+    const display = (card.dataset.display || '').trim();
+    if(first || last) return (first + ' ' + last).trim();
+    if(display) return display;
+    return 'Student';
+  }
+
+  function updateGreetingAndCounts(){
+    const card = document.getElementById('greetingCard');
+    if(!card) return;
+    const heading = document.getElementById('greetingHeading');
+    const sub = document.getElementById('greetingSub');
+    const name = nameFromCard(card);
+    heading.textContent = `${salutation()}, ${name}!`;
+
+    // fetch counts (tasks + meetings)
+    fetch('/api/tasks', { credentials: 'same-origin' })
+      .then(r => r.ok ? r.json() : Promise.reject(r))
+      .then(tasks => {
+        const today = new Date(); today.setHours(0,0,0,0);
+        let tasksDueToday = 0;
+        let tasksUpcoming = 0;
+        const weekEnd = new Date(today); weekEnd.setDate(today.getDate() + 7);
+        tasks.forEach(t => {
+          let d = null;
+          if(t.due){
+            const parsed = Date.parse(t.due);
+            if(!isNaN(parsed)) d = new Date(parsed);
+          }
+          if(d){
+            const d0 = new Date(d); d0.setHours(0,0,0,0);
+            if(d0.getTime() === today.getTime()) tasksDueToday++;
+            else if(d0.getTime() > today.getTime() && d0.getTime() <= weekEnd.getTime()) tasksUpcoming++;
+          }
+        });
+        window.__tasksDueToday = tasksDueToday;
+        window.__tasksUpcoming = tasksUpcoming;
+      })
+      .catch(err => {
+        console.warn('tasks fetch failed', err);
+        window.__tasksDueToday = 0;
+        window.__tasksUpcoming = 0;
+      })
+      .finally(() => {
+        // chain fetch for meetings and update DOM
+        fetch('/api/meetings', { credentials: 'same-origin' })
+          .then(r => r.ok ? r.json() : Promise.reject(r))
+          .then(meetings => {
+            const today = new Date(); today.setHours(0,0,0,0);
+            const weekEnd = new Date(today); weekEnd.setDate(today.getDate() + 7);
+            let meetingsUpcoming = 0;
+            meetings.forEach(m => {
+              if(!m.datetime) return;
+              const parsed = Date.parse(m.datetime);
+              if(isNaN(parsed)) return;
+              const dt = new Date(parsed); dt.setHours(0,0,0,0);
+              if(dt.getTime() > today.getTime() && dt.getTime() <= weekEnd.getTime()) meetingsUpcoming++;
+            });
+            const tasksDueToday = window.__tasksDueToday || 0;
+            const tasksUpcoming = window.__tasksUpcoming || 0;
+            const totalUpcoming = meetingsUpcoming + tasksUpcoming;
+            document.getElementById('dueCount').textContent = String(tasksDueToday);
+            document.getElementById('upcomingCount').textContent = String(totalUpcoming);
+          })
+          .catch(err => {
+            console.warn('meetings fetch failed', err);
+            const tasksDueToday = window.__tasksDueToday || 0;
+            const tasksUpcoming = window.__tasksUpcoming || 0;
+            document.getElementById('dueCount').textContent = String(tasksDueToday || 0);
+            document.getElementById('upcomingCount').textContent = String(tasksUpcoming || 0);
+          });
+      });
+  }
+
+  document.addEventListener('DOMContentLoaded', function(){
+    updateGreetingAndCounts();
+    fetchAndPopulate();
+  });
+
+  // expose to allow manual refresh
+  window.refreshGreetingAndCounts = updateGreetingAndCounts;
+})();

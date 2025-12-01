@@ -1,0 +1,215 @@
+/* ====== ui-common.css (integrated) ====== */
+:root{
+  --bg:#f7faf9;
+  --panel:#fff;
+  --muted:#6b7280;
+  --accent:#16a34a;
+  --accent-2:#f97316;
+  --card-border:#e6eef0;
+  --shadow:0 12px 40px rgba(12,18,30,0.06);
+  --page-padding: clamp(16px, 3vw, 48px);
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:var(--bg);font-family: system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial;color:#0f172a;}
+
+/* Page header / controls */
+.page-top,.meetings-top{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:20px;padding:4px 0}
+.page-title,.meetings-title{font-size:22px;font-weight:800}
+.muted-small{color:var(--muted);font-size:13px}
+
+/* Search / controls */
+.search-inline{display:flex;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--card-border);border-radius:10px;padding:8px 12px}
+.search-inline input{border:0;outline:0;background:transparent;color:var(--muted);width:260px;font-size:14px}
+.btn{padding:8px 12px;border-radius:8px;cursor:pointer;border:0;background:var(--accent);color:#fff;font-weight:700}
+.btn.secondary{background:#fff;color:#111;border:1px solid var(--card-border)}
+.btn.small{padding:6px 10px;border-radius:8px}
+
+/* Stat tiles */
+.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.stat-tile{background:var(--panel);border:1px solid var(--card-border);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:6px;min-height:72px}
+.stat-label{color:var(--muted);font-size:13px}
+.stat-number{font-weight:800;color:var(--accent);font-size:18px}
+
+/* Main grid / panels */
+.main-grid,.meet-body{display:grid;grid-template-columns:1fr 320px;gap:20px;align-items:start}
+@media(max-width:1200px){.main-grid{grid-template-columns:1fr 320px}}
+@media(max-width:900px){.main-grid,.meet-body{grid-template-columns:1fr}}
+.panel{background:var(--panel);border:1px solid var(--card-border);border-radius:10px;padding:12px;min-height:120px}
+
+/* Cards (meetings & tasks) */
+.meeting-card,.task-card{border:1px solid var(--card-border);border-radius:8px;background:#fff;padding:12px;display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;gap:12px}
+.meeting-title,.task-title{font-weight:700;font-size:15px}
+.meeting-purpose,.task-desc{color:var(--muted);font-size:13px;margin-top:6px}
+.meeting-meta,.task-meta{font-size:13px;color:var(--muted);margin-top:6px}
+
+.tag{background:#f0fdf4;color:var(--accent);border-radius:999px;padding:4px 8px;font-size:12px;margin-right:6px;display:inline-block}
+.tag.secondary{background:#fff7ed;color:#c2410c}
+
+/* Task-specific right area & progress */
+.task-right{display:flex;flex-direction:column;gap:8px;align-items:flex-end;min-width:120px}
+.progress-wrap{width:220px;max-width:220px}
+.progress{width:100%;height:8px;background:#f2f4f5;border-radius:9999px;overflow:hidden}
+.progress .fill{height:100%;background:var(--accent-2);border-radius:9999px}
+.actions-row{display:flex;gap:6px}
+.iconbtn{border:1px solid var(--card-border);background:#fff;border-radius:8px;padding:8px 10px;cursor:pointer;font-size:13px;color:var(--muted)}
+.iconbtn:hover{background:#f3f6f5}
+
+/* Badges */
+.badge{font-size:12px;border-radius:9999px;padding:4px 8px;border:1px solid var(--card-border);display:inline-block}
+.priority-high{background:#fee2e2;color:#dc2626}
+.priority-medium{background:#fef3c7;color:#ca8a04}
+.priority-low{background:#dcfce7;color:#16a34a}
+
+/* Segmented control (shared) */
+.seg{position:relative;display:inline-flex;gap:0;border-radius:9999px;overflow:hidden;border:1px solid var(--card-border);padding:4px;align-items:center}
+.seg button{padding:8px 12px;background:transparent;border:0;color:var(--muted);font-weight:700;cursor:pointer;border-radius:9999px;min-width:64px}
+.seg .thumb{position:absolute;top:4px;bottom:4px;left:4px;width:64px;border-radius:9999px;background:#e8f7f0;border:1px solid #bbf7d0;transition:transform .24s ease,width .18s ease}
+.seg button.active{color:var(--accent)}
+
+/* Modal & floating-label forms (shared) */
+#modal{display:none;position:fixed;inset:0;background:rgba(10,15,25,0.38);align-items:center;justify-content:center;z-index:1400;padding:18px}
+.dialog{width:min(820px,96%);background:var(--panel);border-radius:12px;border:1px solid var(--card-border);box-shadow:var(--shadow);max-height:calc(100vh - 64px);display:flex;flex-direction:column;overflow:hidden}
+.dialog-header{padding:14px 18px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(0,0,0,0.03)}
+.dialog-header h3{margin:0;font-size:18px;font-weight:800}
+.close-x{background:transparent;border:0;font-size:18px;color:var(--muted);cursor:pointer}
+.dialog-body{padding:16px 18px;overflow:auto;-webkit-overflow-scrolling:touch}
+.field{position:relative;margin-top:12px}
+.input,textarea,select{width:100%;box-sizing:border-box;padding:12px;border-radius:8px;border:1px solid var(--card-border);background:#fff;font-size:14px;color:#0f172a}
+textarea{min-height:80px;resize:vertical;padding-top:18px}
+.floating-label{position:absolute;left:12px;top:12px;font-size:13px;color:var(--muted);background:transparent;pointer-events:none;padding:0 6px;transition:transform .12s ease,font-size .12s ease,top .12s ease,color .12s ease}
+.input:focus + .floating-label,.input:not(:placeholder-shown) + .floating-label,textarea:focus + .floating-label,textarea:not(:placeholder-shown) + .floating-label,select:focus + .floating-label,.has-value > .floating-label{transform:translateY(-130%);top:6px;font-size:12px;color:var(--accent);background:var(--panel)}
+.dialog-footer{display:flex;justify-content:flex-end;gap:10px;padding:12px 18px;border-top:1px solid rgba(0,0,0,0.03);background:linear-gradient(180deg,rgba(255,255,255,0),rgba(255,255,255,1))}
+.muted-note{color:var(--muted);font-size:13px;margin-top:8px}
+
+/* utilities */
+.chip{font-size:12px;padding:4px 8px;border-radius:999px;background:#f3f4f6;border:1px solid #e6e9ee;color:var(--muted);display:inline-block}
+.muted{color:var(--muted)}
+.round{appearance:none;width:18px;height:18px;border:2px solid #d1d5db;border-radius:50%;display:inline-grid;place-content:center;cursor:pointer;flex-shrink:0}
+.round:checked{border-color:#22c55e;background:#dcfce7}
+.round:checked::after{content:"";width:8px;height:8px;border-radius:50%;background:#16a34a;display:block}
+
+/* responsive */
+@media(max-width:720px){.search-inline input{width:140px}.dialog{width:calc(100% - 28px)}}
+
+/* ====== End ui-common.css ====== */
+
+
+/* ====== home.html specific styles (keeps uniqueness; can override where desired) ====== */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+
+:root {
+  --accent-strong: #16a34a;
+  --accent-soft: rgba(22, 163, 74, 0.08);
+  --muted: #6b7280;
+  --bg: #f3f6f4;
+  --radius: 16px;
+  --badge-high: #ef4444;
+  --badge-medium: #f59e0b;
+  --badge-low: #10b981;
+
+  --sidebar-w: var(--sidebar-w, 280px);
+  --page-gap: clamp(20px, 3.2vw, 60px);
+  --page-padding-x: clamp(16px, 3vw, 80px);
+  --card-padding-vertical: clamp(14px, 1.5vw, 28px);
+  --card-padding-horizontal: clamp(16px, 1.8vw, 40px);
+}
+
+/* ensure the body uses the home background while still compatible with ui-common */
+body { background: var(--bg); font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; margin:0; }
+
+/* Keep your main layout */
+.main-content {
+  display: flex;
+  justify-content: flex-start;
+  padding-top: clamp(18px,4vh,48px);
+  padding-bottom: clamp(18px,4vh,48px);
+  padding-left: calc(var(--sidebar-w) + 20px);
+  padding-right: var(--page-padding-x);
+  box-sizing: border-box;
+}
+.page-inner { width: 100%; max-width: calc(100% - (var(--sidebar-w) + 24px)); padding: 0 30px; box-sizing: border-box; }
+
+.greeting-card {
+  background: var(--panel);
+  border-radius: var(--radius);
+  padding: var(--card-padding-vertical) var(--card-padding-horizontal);
+  box-shadow: var(--shadow);
+  border: 1px solid rgba(0,0,0,0.05);
+  display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--page-gap);flex-wrap:wrap;
+}
+.greeting-left h1 { margin:0; font-size: clamp(20px, 2.6vw, 34px); color: #0f172a; font-weight:800; }
+.greeting-left p { margin: 10px 0 0; color: var(--muted); font-weight:600; font-size:1rem; }
+.top-date { color: var(--muted); font-weight:700; font-size:1rem; text-align:right; }
+
+/* Dashboard grid */
+.dashboard-grid { display:grid; grid-template-columns: 360px minmax(600px,1fr) 320px; gap: var(--page-gap); align-items:start; }
+.card { background: var(--panel); border-radius: var(--radius); border: 1px solid rgba(0,0,0,0.06); box-shadow: var(--shadow); }
+.card-header { padding: calc(var(--card-padding-vertical) - 4px) calc(var(--card-padding-horizontal) - 8px); display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(0,0,0,0.05); font-weight:700; }
+.card-body { padding: var(--card-padding-vertical) var(--card-padding-horizontal); }
+
+/* keep outline/quick actions but align to ui-common look */
+.outline-action { border: 1.8px dashed var(--accent-strong); color: var(--accent-strong); background: transparent; border-radius: 12px; font-weight:700; display:inline-flex; align-items:center; gap:10px; padding:12px 20px; cursor:pointer; }
+.outline-action:hover { background: var(--accent-soft); transform: translateY(-2px); }
+
+/* quick actions */
+.quick-action { border:1.5px solid rgba(6,95,70,0.18); border-radius:12px; padding:14px 20px; background:transparent; display:flex; align-items:center; justify-content:space-between; font-weight:700; color:#111827; transition:all .18s ease; text-align:left; }
+.quick-action:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(22,163,74,0.06); }
+
+/* badges from home override ui-common .badge default color so they appear filled */
+.badge { padding:6px 12px; border-radius:999px; font-weight:800; font-size:0.85rem; color:#fff; }
+.badge.high { background: var(--badge-high); }
+.badge.medium { background: var(--badge-medium); }
+.badge.low { background: var(--badge-low); }
+
+/* task/meeting entries */
+.task-entry, .meeting-entry {
+  display:flex; justify-content:space-between; align-items:center; padding:12px 16px; border-radius:12px;
+  border:1px solid rgba(0,0,0,0.04); background:#fbfcfb; margin-bottom:12px; transition: transform .12s ease, box-shadow .12s ease;
+}
+.task-entry:hover, .meeting-entry:hover { transform: translateY(-4px); box-shadow: 0 12px 28px rgba(16,24,40,0.06); }
+.task-entry h4, .meeting-entry h4 { margin:0; font-size:0.95rem; font-weight:800; }
+.task-entry p, .meeting-entry p { margin:6px 0 0; color:var(--muted); font-size:0.9rem; }
+
+/* campus card image */
+.campus-card { margin-top: calc(var(--page-gap) + 40px); }
+.campus-card .card-body img { width:100%; height:300px; border-radius:12px; object-fit:cover; }
+
+/* responsive */
+@media (max-width:1300px) {
+  .dashboard-grid{ grid-template-columns: 340px minmax(520px,1fr) 300px; gap: calc(var(--page-gap)*0.9); }
+  .page-inner{ max-width: calc(100% - (var(--sidebar-w) + 20px)); }
+}
+@media (max-width:920px) {
+  .dashboard-grid{ grid-template-columns: 1fr 1fr; gap: calc(var(--page-gap)*0.8); }
+  .main-content{ padding-left: var(--page-padding-x); padding-right: var(--page-padding-x); }
+  .page-inner{ padding: 0 16px; max-width:100%; }
+}
+@media (max-width:768px) {
+  .dashboard-grid{ grid-template-columns:1fr; gap:20px; }
+  .greeting-card{ flex-direction:column; text-align:center; padding:18px; }
+  .greeting-left h1{ font-size:24px; }
+  .greeting-left p{ font-size:0.95rem; }
+  .top-date{ text-align:center; margin-top:10px; }
+  .card-header{ padding:15px 20px; flex-direction:column; align-items:flex-start; gap:10px; }
+  .card-body{ padding:18px 20px; }
+  .task-entry, .meeting-entry{ flex-direction:column; align-items:flex-start; gap:8px; }
+  .campus-card .card-body img { height:200px; }
+}
+@media (max-width:480px) {
+  .greeting-left h1{ font-size:20px; }
+  .card-body{ padding:15px; }
+  .outline-action, .quick-action{ padding:10px 15px; font-size:0.9rem; }
+  .badge{ font-size:0.75rem; padding:4px 10px; }
+}
+
+/* small helper for form row */
+.form-row { display:flex; gap:12px; }
+.form-row .field { flex:1; }
+
+/* keep consistent button styles if any inside modal */
+.dialog .btn { background:var(--accent-strong); color:#fff; padding:10px 14px; border-radius:8px; border:0; font-weight:700; cursor:pointer; }
+.dialog .btn.secondary { background:#fff; color:#111; border:1px solid var(--card-border); }
+
+/* end home-specific */

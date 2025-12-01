@@ -1,0 +1,245 @@
+:root{ --bg:#f3f6f4; --panel:#fff; --muted:#6b7280; --accent-strong:#16a34a; --radius:12px; --shadow:0 10px 30px rgba(12,18,30,0.05); }
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);font-family:Inter,system-ui,-apple-system,'Segoe UI',Roboto,Arial;color:#0f172a}
+.main-content{padding:20px 0}
+
+/* Combined dashboard container */
+.dashboard-grid { display:block; }
+.combined-card { display:grid; grid-template-columns: 320px 1fr 260px; gap:12px; align-items:start; padding:10px; border-radius:14px; }
+.combined-card {
+  padding: 20px;
+  min-height: 500px; /* adjust to desired height */
+  align-items: stretch;
+}
+.combined-section { background:#fbfcfb; border-radius:10px; padding:10px; border:1px solid rgba(0,0,0,0.03); }
+.combined-section h3{ margin:0 0 6px;font-size:0.95rem;font-weight:800 }
+.combined-section p{ margin:6px 0 0;color:var(--muted);font-size:0.9rem }
+/* Ensure the grid container stretches children to equal height */
+.combined-card {
+  display: grid; /* already set, but ensure it stays a grid */
+  grid-template-columns: 320px 1fr 260px;
+  gap: 12px;
+  align-items: stretch;      /* <-- key: make columns equal height */
+  min-height: 380px;         /* optional: overall minimum height */
+  padding: 12px;             /* keep comfortable padding */
+}
+
+/* Make each section a column flex container so we can stretch internal parts */
+.combined-section {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #fbfcfb;
+  border-radius: 10px;
+  padding: 12px;
+  border: 1px solid rgba(0,0,0,0.03);
+}
+
+/* Make lists expand to take available vertical space */
+#scheduleList,
+#taskList {
+  flex: 1 1 auto;        /* expand to fill space */
+  overflow: auto;        /* scroll internally if content is long */
+  padding-right: 4px;
+}
+
+/* Keep the Add buttons visually smaller and pinned to the left */
+.quick-action {
+  /* default style kept for the green full-width quick actions on the right */
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: var(--accent-strong);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.9rem;
+  text-align: left;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+/* Smaller left-aligned action buttons used inside schedule/tasks columns */
+.quick-action.small-action {
+  padding: 6px 10px;        /* much smaller */
+  font-size: 0.85rem;
+  width: auto;              /* shrink to content */
+  align-self: flex-start;   /* place at the left of the section */
+  justify-content: flex-start; /* keep chevron (if any) on right removed */
+  gap: 8px;
+  box-shadow: none;
+}
+
+/* If you want the small button to still have a subtle border */
+.quick-action.small-action { 
+  border-radius: 6px;
+}
+
+/* Combined card: ensure equal column heights */
+.combined-card {
+  display: grid;
+  grid-template-columns: 320px 1fr 260px;
+  gap: 12px;
+  align-items: stretch;   /* columns will match height */
+  min-height: 420px;
+  padding: 12px;
+}
+
+/* Make each section a column flex container so internal pieces can stretch */
+.combined-section {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #fbfcfb;
+  border-radius: 10px;
+  padding: 12px;
+  border: 1px solid rgba(0,0,0,0.03);
+  box-shadow: 0 6px 18px rgba(12,18,30,0.03);
+}
+
+/* Quick Actions column container (rounded & elevated) */
+#quickColumn {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border-radius: 12px;
+  padding: 10px;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfcfb 100%);
+  box-shadow: 0 10px 30px rgba(12,18,30,0.04);
+  border: 1px solid rgba(0,0,0,0.03);
+  overflow: hidden;
+}
+
+/* Quick Actions header pinned to top */
+#quickColumn .qa-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 6px;
+  font-weight: 800;
+  font-size: 0.95rem;
+  color: #0f172a;
+  flex: 0 0 auto; /* stay fixed height */
+  z-index: 2;
+}
+
+/* optional small icon in header */
+#quickColumn .qa-header img {
+  width: 36px;
+  height: 36px;
+  object-fit: cover;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(12,18,30,0.06);
+}
+
+/* Container for the buttons: fills remaining space */
+#quickColumn .qa-body {
+  display: grid;
+  grid-template-rows: repeat(4, 1fr);   /* 4 equal-height rows */
+  gap: 12px;                             /* equal spacing between buttons */
+  flex: 1 1 auto;
+  height: 100%;
+  padding-top: 6px;
+  /* Let the body use a subtle inner background for contrast */
+  background: transparent;
+}
+
+/* Each quick-action button: divide the qa-body space evenly */
+#quickColumn .quick-action {
+  flex: 1 1 25%; (4 buttons => 25% each)
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  font-size: 1rem;
+  font-weight: 700;
+  border-radius: 10px;
+  background: #16a34a;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  transition: transform 180ms cubic-bezier(.2,.9,.2,1), box-shadow 180ms, background 150ms;
+  box-shadow: 0 6px 16px rgba(12,18,30,0.06);
+  position: relative;
+  overflow: hidden;
+}
+
+
+/* Divider line between buttons (keeps equal heights) */
+#quickColumn .quick-action:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  right: 12px;
+  left: 12px;
+  bottom: -5px;
+  height: 1px;
+  background: rgba(255,255,255,0.06);
+  pointer-events: none;
+}
+
+/* Hover/active */
+#quickColumn .quick-action:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 36px rgba(12,18,30,0.12);
+  background: linear-gradient(180deg,#1fa957,#14903f);
+}
+#quickColumn .quick-action:active {
+  transform: translateY(-1px) scale(0.998);
+  box-shadow: 0 10px 20px rgba(12,18,30,0.10);
+}
+
+/* Give the chevron or arrow a subtle style (if you have it on the right) */
+#quickColumn .quick-action .chev {
+  opacity: 0.95;
+  font-size: 1.05rem;
+}
+
+/* Optional small left-aligned buttons inside schedule/tasks (keeps them compact) */
+.quick-action.small-action {
+  padding: 6px 10px;
+  font-size: 0.85rem;
+  width: auto;
+  align-self: flex-start;
+  justify-content: flex-start;
+  gap: 8px;
+  box-shadow: none;
+}
+
+/* Make the lists inside center column expand */
+#scheduleList, #taskList {
+  flex: 1 1 auto;
+  overflow: auto;
+}
+
+/* Compact entry styling for room/space */
+.task-entry, .meeting-entry {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  background: #fff;
+  border: 1px solid rgba(0,0,0,0.03);
+}
+
+/* Responsive: stack on narrow screens and make quick actions full width */
+@media (max-width:1000px) {
+  .combined-card { grid-template-columns: 1fr; min-height: auto; }
+  #quickColumn { padding: 10px 12px; border-radius: 8px; }
+  #quickColumn .qa-body { gap: 8px; }
+  #quickColumn .quick-action { flex: 0 0 auto; height: auto; }
+  .quick-action.small-action { align-self: stretch; width: 100%; }
+}
+
+
+.badge{ padding:4px 10px; border-radius:999px; font-weight:700; font-size:0.78rem; color:#fff }
+.badge.high{ background:#ef4444 }
+.badge.medium{ background:#f59e0b }
+.badge.low{ background:#10b981 }
+.quick-action{ width:100%; padding:10px 14px; border:none; border-radius:8px; background:var(--accent-strong); color:#fff; font-weight:700; font-size:0.9rem; text-align:left; display:flex; justify-content:space-between; align-items:center; cursor:pointer; transition:background 0.2s }
+.quick-action span{ font-size:1.2rem; line-height:1; }
+/* Responsive tweaks */
+@media (max-width:1000px){ .combined-card{ grid-template-columns: 1fr; } .combined-section{ padding:12px } }

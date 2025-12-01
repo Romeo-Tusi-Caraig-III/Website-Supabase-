@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Student Hub</title>
+
+  <!-- Shared inline CSS (used by dashboard + calendar) -->
+  <style>
+    :root{
+      --accent:#16a34a;
+      --emerald-600:#059669;
+      --gray-50:#f9fafb;
+      --gray-100:#f3f4f6;
+      --gray-200:#e5e7eb;
+      --gray-300:#d1d5db;
+      --gray-600:#4b5563;
+      --gray-700:#374151;
+      --white:#ffffff;
+      --radius-lg:16px;
+      --shadow-sm:0 6px 20px rgba(16,24,40,0.06);
+      --nav-active-bg: rgba(22,163,74,0.08);
+
+      /* expose the sidebar width so child templates can use it */
+      --sidebar-w: 280px;
+      --max-content-width: 1300px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+      background:var(--gray-50);
+      color:var(--gray-700);
+      -webkit-font-smoothing:antialiased;
+    }
+/* ---------- Unified site shell (Option A) ---------- */
+/* tweak these values to match your visual design */
+:root{
+  --site-sidebar-width: 220px;    /* left nav width */
+  --content-max-width: 980px;     /* same as calendar --cal-max-width */
+  --content-gutter: 28px;         /* left/right padding inside centered area */
+}
+
+/* Apply a consistent grid shell to the page.
+   Add any other wrapper name your app uses if needed. */
+.app-shell, .site-shell, .admin-shell, .site-layout, .layout {
+  display: grid;
+  grid-template-columns: var(--site-sidebar-width) 1fr;
+  min-height: 100vh;
+  gap: 0;
+}
+
+/* Sidebar selectors to normalize left nav width.
+   Add your actual sidebar selector if different (e.g. .admin-sidebar). */
+.site-sidebar, .admin-sidebar, .sidebar, nav.sidebar {
+  width: var(--site-sidebar-width);
+  min-width: var(--site-sidebar-width);
+  max-width: var(--site-sidebar-width);
+  box-sizing: border-box;
+}
+
+/* Center and constrain the main content area so pages line up */
+.main-content, .page-inner, .content, .admin-main {
+  max-width: var(--content-max-width);
+  margin: 0 auto;                 /* center the page-inner within the remaining space */
+  padding: var(--content-gutter);
+  box-sizing: border-box;
+  width: 100%;
+}
+
+/* Make sure internal cards don't force the outer layout to expand.
+   If you added a min-width to #quickColumn or similar, remove/override it. */
+#quickColumn, .quick-column, .right-rail {
+  min-width: 0 !important;       /* allow it to shrink inside the constrained content */
+  max-width: 360px;              /* keeps the quick actions column bounded */
+  box-sizing: border-box;
+}
+
+/* Optional: ensure long content inside sidebar doesn't overflow the viewport */
+.site-sidebar, .admin-sidebar {
+  overflow: auto;
+}
+
+/* Small-screen fallback: stack sidebar + content */
+@media (max-width: 980px) {
+  .app-shell, .site-shell, .admin-shell, .site-layout, .layout {
+    grid-template-columns: 1fr;   /* sidebar becomes part of flow or is toggled via JS */
+  }
+  .site-sidebar, .admin-sidebar, .sidebar, nav.sidebar {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+  .main-content, .page-inner { padding: 16px; }
+}
+
+    /* Layout */
+    .dashboard-layout{display:flex;min-height:100vh}
+    /* Sidebar is fixed so main content can be offset */
+    .sidebar{
+      width:var(--sidebar-w);
+      background:var(--white);
+      border-right:1px solid var(--gray-200);
+      display:flex;
+      flex-direction:column;
+      position:fixed;
+      left:0; top:0; bottom:0;
+      z-index:900;
+      box-shadow:4px 0 24px rgba(0,0,0,0.02);
+      overflow:auto;
+      transition:transform .22s ease;
+    }
+
+    /* main area — children templates render inside .main-content */
+    .main-content{
+      /* default offset (sidebar width + gap) provided via JS too, but keep sensible fallback */
+      margin-left: calc(var(--sidebar-w) + 24px);
+      max-width:calc(100% - (var(--sidebar-w) + 80px));
+      margin-right:auto;
+      padding:28px 24px;
+      min-height:100vh;
+      background:transparent;
+      transition:all .18s ease;
+      display:flex;
+      justify-content:center; /* center the inner page area by default */
+    }
+
+    /* inner content container (center, max width) */
+    .page-inner {
+      width:100%;
+      max-width:var(--max-content-width);
+    }
+
+    /* Topbar */
+    .topbar{
+      background:var(--white);
+      border:1px solid var(--gray-200);
+      border-radius:10px;
+      padding:12px 16px;
+      margin-bottom:18px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+    }
+    .topbar .search input{
+      padding:8px 10px;
+      border-radius:10px;
+      border:1px solid var(--gray-200);
+      background:var(--gray-50);
+    }
+
+    /* Cards and general panels */
+    .card{
+      background:var(--white);
+      border:1px solid var(--gray-200);
+      border-radius:var(--radius-lg);
+      box-shadow:var(--shadow-sm);
+      overflow:hidden;
+    }
+    .card-header{padding:14px 16px;border-bottom:1px solid var(--gray-200);display:flex;justify-content:space-between;align-items:center}
+    .card-body{padding:18px}
+
+    /* calendar grid helpers */
+    .days-header{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;padding:12px 14px;color:var(--gray-600);font-weight:600;font-size:13px;text-align:center}
+    .calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:12px;padding:12px}
+    .cell{
+      min-height:100px;padding:8px;border-radius:12px;border:1px solid var(--gray-200);
+      background:var(--white);display:flex;flex-direction:column;gap:6px;transition:box-shadow .12s ease;
+    }
+    .cell.other{background:#fbfbfb;opacity:.95}
+    .cell.today{outline:2px solid var(--emerald-600)}
+    .cell.selected{outline:2px solid var(--accent)}
+
+    .event-stack{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+    .pill{padding:6px 8px;border-radius:10px;font-weight:700;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border:1px solid transparent}
+    .pill.class{background:rgba(59,130,246,.12);color:#1d4ed8;border-color:#bfdbfe}
+    .pill.lab{background:rgba(16,185,129,.12);color:#047857;border-color:#a7f3d0}
+    .pill.study{background:rgba(139,92,246,.12);color:#6d28d9;border-color:#ddd6fe}
+    .pill.assignment{background:rgba(239,68,68,.12);color:#b91c1c;border-color:#fecaca}
+    .pill.more{background:var(--gray-100);color:var(--gray-600);border-color:var(--gray-200)}
+
+    .events-body{min-height:240px;padding:12px}
+    .event-item{border:1px solid var(--gray-200);border-radius:10px;padding:10px;margin-bottom:10px;background:var(--gray-50)}
+    .upcoming-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;padding:12px}
+
+    /* Sidebar content (consistent look) */
+    .brand{display:flex;align-items:center;gap:12px;padding:18px}
+    .brand-icon{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;background:var(--emerald-600);color:#fff}
+    .brand-title h2{margin:0;font-size:1.05rem}
+    .brand-title small{display:block;color:var(--gray-600);font-size:12px}
+
+    .sidebar-nav{padding:8px 0;flex:1}
+    .nav-item{
+      display:flex;align-items:center;gap:12px;padding:12px 20px;color:var(--gray-700);text-decoration:none;border-radius:10px;margin:6px 12px;
+      position:relative;overflow:visible;cursor:pointer;
+      transition:background .18s ease, transform .12s ease, color .12s ease;
+    }
+    .nav-item:hover{ background:var(--gray-100); transform: translateX(3px); }
+
+    /* active look: left rounded indicator + green text */
+    .nav-item.active{
+      background:var(--nav-active-bg);
+      color:var(--accent);
+      font-weight:600;
+    }
+    .nav-item.active::before{
+      content: "";
+      position:absolute;
+      left:-6px;
+      top:8px;
+      bottom:8px;
+      width:6px;
+      background:linear-gradient(180deg,var(--accent),var(--emerald-600));
+      border-top-right-radius:8px;
+      border-bottom-right-radius:8px;
+    }
+
+    /* subtle highlight animation when becoming active */
+    .nav-item.animate-activate {
+      animation: activateFade .28s ease both;
+    }
+    @keyframes activateFade {
+      from { transform: translateX(-6px); opacity:0.6; }
+      to   { transform: translateX(0); opacity:1; }
+    }
+
+    .nav-icon{width:18px;height:18px;flex:0 0 18px}
+
+    .sidebar-footer{padding:14px;border-top:1px solid var(--gray-200);display:flex;justify-content:center}
+    .btn{padding:8px 12px;border-radius:10px;border:none;cursor:pointer}
+    .btn-primary{background:var(--accent);color:#fff;font-weight:700}
+    .btn-outline{border:1.5px solid var(--accent);background:#fff;color:var(--accent);font-weight:700}
+
+    /* center sign out and make it full width on small screens */
+    .sidebar-footer .btn-signout {
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      justify-content:center;
+      width:85%;
+      max-width:220px;
+      padding:10px 12px;
+      border-radius:20px;
+      border:1.8px solid var(--emerald-600);
+      color:var(--emerald-600);
+      background:#fff;
+    }
+
+    /* Responsive adjustments */
+    @media(max-width:1100px){ .main-content{margin-left:var(--sidebar-w);padding:20px} }
+    @media(max-width:900px){
+      .sidebar{transform:translateX(-100%);transition:transform .25s ease}
+      .sidebar.open{transform:translateX(0)}
+      .main-content{margin-left:0;padding:16px}
+    }
+
+    /* small entrance animation for cards */
+    @keyframes cardIn { from { opacity: 0; transform: translateY(8px); } to { opacity:1; transform: translateY(0); } }
+    .card.card-animate { animation: cardIn .32s cubic-bezier(.2,.9,.3,1) both; }
+  </style>
+
+  {% block head %}{% endblock %}
+</head>
+
+<body>
+  <div class="home-layout">
+    <!-- Sidebar -->
+   <aside class="sidebar" id="sidebar" role="navigation" aria-label="Main navigation">
+  <div class="brand">
+    <div class="brand-icon" aria-hidden="true">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M12 6v12M6 8h12"/>
+      </svg>
+    </div>
+    <div class="brand-title">
+      <h2>Student Hub</h2>
+      <small>Academic Success</small>
+    </div>
+  </div>
+
+  <nav class="sidebar-nav" id="sidebarNav" aria-label="Primary">
+    <a href="{{ url_for('home') }}" class="nav-item" data-route="/user/home" data-alt="/home" title="Home">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3.172l8 6.545V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1V9.717l8-6.545z"></path></svg>
+      <span>Home</span>
+    </a>
+
+    <a href="{{ url_for('calendar_view') }}" class="nav-item" data-route="/user/calendar_view" data-alt="/calendar_view" title="Calendar">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M7 2a1 1 0 0 0-1 1v1H5a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3V7a3 3 0 0 0-3-3h-1V3a1 1 0 1 0-2 0v1H8V3a1 1 0 0 0-1-1zM4 10h16v7a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-7z"></path></svg>
+      <span>Calendar</span>
+    </a>
+
+    <a href="{{ url_for('planner_view') }}" class="nav-item" data-route="/user/planner_view" data-alt="/planner_view" title="Planner">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M9 2h6a2 2 0 0 1 2 2v1h1a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V8a3 3 0 0 1 3-3h1V4a2 2 0 0 1 2-2h2zM12 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM8 12h8v2H8v-2zM8 16h8v2H8v-2z"></path></svg>
+      <span>Planner</span>
+    </a>
+
+    <a href="{{ url_for('budget_view') }}" class="nav-item" data-route="/user/budget_view" data-alt="/budget_view" title="Budget">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M2 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2h-3a3 3 0 1 0 0 6h3v3a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7zM18 13a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"></path></svg>
+      <span>Budget</span>
+    </a>
+
+    <a href="{{ url_for('meetings_page') }}" class="nav-item" data-route="/user/meetings_page" data-alt="/meetings_page" title="Meetings">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.657 0 3-1.343 3-3S17.657 5 16 5s-3 1.343-3 3 1.343 3 3 3zM8 11c1.657 0 3-1.343 3-3S9.657 5 8 5 5 6.343 5 8s1.343 3 3 3zM4 18a4 4 0 0 1 8 0v1H4v-1zM12 18a4 4 0 0 1 8 0v1h-8v-1z"></path></svg>
+      <span>Meetings</span>
+    </a>
+
+    <a href="{{ url_for('profile_view') }}" class="nav-item" data-route="/user/profile_view" data-alt="/profile_view" title="Profile">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 20a7.5 7.5 0 0 1 16 0v1H4v-1z"></path></svg>
+      <span>Profile</span>
+    </a>
+  </nav>
+
+  <!-- FIXED: this was previously outside the sidebar container -->
+  <div class="sidebar-footer">
+    <button class="btn-signout" onclick="logout()" aria-label="Sign out">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path d="M17 16l4-4-4-4"/>
+        <path d="M7 8v8"/>
+      </svg>
+      <span>Sign Out</span>
+    </button>
+  </div>
+</aside>
+
+
+    <!-- Main content (child templates supply the content in block body) -->
+    <main class="main-content" id="mainContent" role="main">
+      <div class="page-inner">
+        {% block body %}{% endblock %}
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // Ensure main-content margin always matches actual sidebar width.
+    (function(){
+      function applyMainMargin(){
+        var sidebar = document.getElementById('sidebar');
+        var main = document.getElementById('mainContent');
+        if(!sidebar || !main) return;
+        var w = Math.round(sidebar.getBoundingClientRect().width) || 280;
+        if(window.innerWidth >= 900){
+          main.style.marginLeft = (w + 24) + 'px'; // breathing room
+          main.style.maxWidth = 'calc(100% - ' + (w + 80) + 'px)';
+        } else {
+          main.style.marginLeft = '0';
+          main.style.maxWidth = '100%';
+        }
+      }
+      window.addEventListener('resize', applyMainMargin);
+      document.addEventListener('DOMContentLoaded', applyMainMargin);
+
+      // small helper for mobile toggle if needed
+      window.toggleSidebar = function(){ document.getElementById('sidebar').classList.toggle('open'); };
+      window.logout = function(){ window.location.href = "{{ url_for('login') }}"; };
+
+      // active nav item detection + animation
+      function setActiveNav() {
+        try {
+          const navLinks = document.querySelectorAll('.sidebar-nav .nav-item');
+          const path = (window.location.pathname || '').toLowerCase();
+          let matched = null;
+          navLinks.forEach(link => {
+            const routeAttr = (link.getAttribute('data-route') || '').toLowerCase();
+            const href = (link.getAttribute('href') || '').toLowerCase();
+            if (routeAttr && path.indexOf(routeAttr) !== -1) matched = link;
+            else if (href && path.indexOf(href.replace(window.location.origin, '')) !== -1) matched = link;
+          });
+          navLinks.forEach(l => l.classList.remove('active','animate-activate'));
+          if (matched) {
+            matched.classList.add('active','animate-activate');
+            setTimeout(()=> matched.classList.remove('animate-activate'), 420);
+          }
+        } catch(e){ /* ignore */ }
+      }
+
+      document.addEventListener('DOMContentLoaded', setActiveNav);
+      window.addEventListener('popstate', setActiveNav);
+    })();
+  </script>
+
+  {% block scripts %}{% endblock %}
+</body>
+</html>

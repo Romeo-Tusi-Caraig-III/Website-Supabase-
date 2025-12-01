@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>User Management</title>
+  <style>
+    body { font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; background:#f8fafc; color:#111827; margin:0; padding:2rem; }
+    .wrap { max-width:1000px; margin:0 auto; }
+    .top { display:flex; justify-content:space-between; align-items:center; gap:1rem; margin-bottom:1rem; }
+    .card { background:white; padding:1rem; border-radius:12px; box-shadow:0 6px 18px rgba(0,0,0,0.06); }
+    table { width:100%; border-collapse:collapse; }
+    th, td { padding:.75rem .5rem; text-align:left; border-bottom:1px solid #eef2ff; }
+    th { color:#374151; font-weight:700; font-size:.9rem; }
+    td.small { width:140px; }
+    .btn { padding:.4rem .6rem; border-radius:8px; cursor:pointer; border:none; font-weight:600; }
+    .btn-promote { background:#e6f4ea; color:#065f46; border:1px solid #bbf7d0; }
+    .btn-demote { background:#fff0f0; color:#991b1b; border:1px solid #fecaca; }
+    .link { text-decoration:none; color:#111827; font-weight:600; background:#f3f4f6; padding:.45rem .6rem; border-radius:8px; }
+    .meta { color:#6b7280; font-size:.9rem; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <h2 style="margin:0">User management</h2>
+        <div class="meta">Logged in as {{ display_name }} — role: {{ role }}</div>
+      </div>
+      <div>
+        <a href="{{ url_for('home') }}" class="link">Back to Home</a>
+      </div>
+    </div>
+
+    <div class="card">
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Created</th>
+            <th class="small">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for u in users %}
+            <tr>
+              <td>{{ u.display_name or '-' }}</td>
+              <td>{{ u.email }}</td>
+              <td>{{ u.role or 'user' }}</td>
+              <td>{{ u.created_at.strftime('%Y-%m-%d') if u.created_at else '-' }}</td>
+              <td>
+                {% if u.role == 'admin' %}
+                  <!-- Demote (POST) -->
+                  <form method="post" action="{{ url_for('admin_demote_user', user_id=u.id) }}" style="display:inline;">
+                    <button class="btn btn-demote" type="submit">Demote</button>
+                  </form>
+                {% else %}
+                  <!-- Promote (POST) -->
+                  <form method="post" action="{{ url_for('admin_promote_user', user_id=u.id) }}" style="display:inline;">
+                    <button class="btn btn-promote" type="submit">Promote</button>
+                  </form>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</body>
+</html>

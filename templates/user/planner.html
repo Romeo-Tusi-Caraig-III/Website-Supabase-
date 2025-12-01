@@ -1,0 +1,433 @@
+{% extends "user/index.html" %}
+
+{% block title %}Planner — Student Hub (Read-only){% endblock %}
+
+{% block head %}
+  <!-- flatpickr CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/ui-common.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/user_planner.css') }}">
+  <style>
+    /* ---------- Typography & global sizing (page-specific) ---------- */
+    :root {
+      --planner-font: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      --planner-base-size: 17px;              /* readable base */
+      --planner-heading: 28px;                /* main page title */
+      --planner-subheading: 16px;
+      --planner-card-radius: 14px;
+      --planner-accent: #08a02eff;
+      --planner-accent-2: #10b93594;
+      --muted: #64748b;
+      --panel-bg: #ffffff;
+      --panel-border: #e6f3e8ff;
+      --shadow-lg: 0 20px 50px rgba(12,18,30,0.12);
+      --shadow-md: 0 10px 30px rgba(12,18,30,0.08);
+      --btn-radius: 10px;
+    }
+    
+    /* Increase the base font size for the planner page */
+    .planner-page, .planner-page * { font-family: var(--planner-font); font-size: var(--planner-base-size); line-height:1.45; color: #0f172a; }
+
+    /* Page title */
+    .page-title { font-size: var(--planner-heading); line-height:1; font-weight:900; color:#0f172a; }
+
+    .muted-note { color: var(--muted); font-weight:600; font-size: var(--planner-subheading); }
+
+    /* Panels & layout adjustments */
+    .panel {
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: var(--planner-card-radius);
+      padding: 20px;
+      box-shadow: var(--shadow-md);
+    }
+
+    .main-grid { gap: 22px; grid-template-columns: 1fr 360px; }
+    @media (max-width:1000px){ .main-grid { grid-template-columns: 1fr; } }
+
+    /* Larger stat tiles */
+    .stat-tile { background: #ffffffff; border: 1px solid #f1f5f9; padding: 10px 14px; border-radius: 12px; display:flex; flex-direction:column; align-items:center; min-width:120px; }
+    .stat-label { font-weight:700; color:var(--muted); font-size:13px; }
+    .stat-number { font-weight:900; color:var(--planner-accent-2); font-size:20px; margin-top:6px; }
+
+    /* Search & controls */
+    .search-inline input { font-size: 15px; padding: 10px 12px; border-radius:10px; background:#fafafa; border:1px solid #e6f3e7ff; width:260px; }
+
+    /* Task cards (timeline entries) */
+    .timeline { display:flex; flex-direction:column; gap:14px; }
+    .timeline-entry {
+      display:flex;
+      gap:16px;
+      align-items:stretch;
+      background:linear-gradient(180deg, #fff, #fff);
+      border-radius:12px;
+      padding:16px;
+      border:1px solid #109e17ff;
+      box-shadow: 0 8px 28px rgba(10,14,20,0.04);
+    }
+    .timeline-entry .title-clickable {
+      font-weight:900;
+      font-size:16.5px;
+      color:#032b3a;
+      cursor:pointer;
+      text-decoration: none;
+    }
+    .timeline-entry .title-clickable:hover { text-decoration:underline; }
+
+    .timeline-entry .task-desc { color:var(--muted); margin-top:8px; font-size:15px; }
+
+    .task-right { width:150px; text-align:right; display:flex; flex-direction:column; justify-content:space-between; align-items:flex-end; }
+    .task-right .view-btn {
+      background: linear-gradient(180deg, var(--planner-accent-2), var(--planner-accent));
+      color: #ffffffff;
+      border:0;
+      padding:8px 14px;
+      border-radius:10px;
+      font-weight:800;
+      cursor:pointer;
+      box-shadow: 0 8px 20px rgba(16,185,129,0.12);
+    }
+
+    /* hide edit/delete controls for read-only users if any present */
+    .task-right .actions-row button,
+    .task-card .actions-row button,
+    .task-card .toggle-complete { display:none !important; }
+
+    /* badges/tags larger */
+    .tag, .badge { font-weight:800; padding:7px 10px; border-radius:999px; font-size:13px; display:inline-block; margin-right:8px; }
+
+    /* modal (view-only) - bigger, modern and readable */
+    #viewModal {
+      display:none;
+      position:fixed;
+      inset:0;
+      align-items:center;
+      justify-content:center;
+      z-index:11000;
+      background: rgba(8,12,16,0.32);
+      -webkit-backdrop-filter: blur(4px);
+      backdrop-filter: blur(4px);
+      padding: 20px;
+    }
+    #viewModal .dialog {
+      width: min(900px, 96%);
+      max-width: 900px;
+      border-radius: 14px;
+      background: #fff;
+      box-shadow: var(--shadow-lg);
+      overflow: hidden;
+      display:flex;
+      flex-direction:column;
+      border: 1px solid rgba(12,18,30,0.04);
+    }
+    #viewModal .dialog-header {
+      padding: 20px 22px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      border-bottom:1px solid #f1f9f1ff;
+    }
+    #viewModal h3 { margin:0; font-size:18px; font-weight:900; letter-spacing: -0.2px; }
+    #viewModal .close-x { background: transparent; border: none; font-size:20px; cursor:pointer; color:var(--muted); }
+    #viewModal .dialog-body {
+      padding: 22px;
+      display:flex;
+      flex-direction:column;
+      gap:14px;
+      font-size:15.5px;
+      color:#0f172a;
+    }
+    #viewModal .dialog-body .v-row { display:flex; gap:18px; align-items:flex-start; }
+    #viewModal .dialog-body .v-row .label { font-weight:800; min-width:86px; color:var(--muted); font-size:14px; }
+    #viewModal .dialog-body .v-value { font-weight:700; font-size:15.5px; color:#062f36; }
+
+    #viewModal .dialog-footer {
+      padding: 14px 18px;
+      display:flex;
+      justify-content:flex-end;
+      border-top: 1px solid #f1f9f3ff;
+      gap:10px;
+    }
+    #viewModal .btn.secondary {
+      background:transparent;
+      border:1px solid #e6edf3;
+      padding:8px 12px;
+      border-radius:10px;
+      font-weight:800;
+      cursor:pointer;
+    }
+
+    /* make sort/display elements clearer */
+    #sortDisplay { padding:8px 12px; border-radius:999px; font-weight:900; background:linear-gradient(180deg,#fff,#f2fbff); border:1px solid rgba(14,165,233,0.12); font-size:14px; }
+
+    /* accessibility / focus visuals */
+    .title-clickable:focus, .view-btn:focus, .btn.secondary:focus { outline: 3px solid rgba(16,185,129,0.12); outline-offset:3px; border-radius:8px; }
+
+    @media(max-width:900px){
+      :root { --planner-base-size: 16px; }
+      .task-right { width:120px; }
+      #viewModal .dialog { width: min(760px,96%); }
+    }
+
+  </style>
+{% endblock %}
+
+{% block body %}
+  <a href="#main-content" class="sr-only" id="skip-link">Skip to main content</a>
+
+  <div class="planner-page" id="main-content">
+    <div class="site-topbar panel" role="banner" aria-label="Planner topbar">
+      <div class="topbar-row" style="display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%">
+        <div style="display:flex;flex-direction:column;gap:10px;min-width:0">
+          <h1 class="page-title" style="margin:0">Planner</h1>
+          <div class="muted-note" style="margin-top:2px">View your assignments and study schedule — read-only view.</div>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:12px">
+          <button id="top-pending" class="stat-tile" type="button" aria-label="View pending tasks"><div class="stat-label">Pending</div><div class="stat-number" id="stat-pending">0</div></button>
+          <button id="top-completed" class="stat-tile" type="button" aria-label="View completed tasks"><div class="stat-label">Completed</div><div class="stat-number" id="stat-completed">0</div></button>
+          <button id="top-high" class="stat-tile" type="button" aria-label="View high priority tasks"><div class="stat-label">High</div><div class="stat-number" id="stat-high">0</div></button>
+          <button id="top-week" class="stat-tile" type="button" aria-label="View due this week"><div class="stat-label">Due This Week</div><div class="stat-number" id="stat-week">0</div></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="main-grid">
+      <div class="panel">
+        <div class="flex-between" style="margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;">
+          <strong style="font-size:15px">All Tasks</strong>
+
+          <div style="display:flex;align-items:center;gap:12px">
+            <div id="seg" class="seg seg--compact seg--brand" data-tab="all" aria-label="Task filters" role="tablist" tabindex="0" style="display:inline-flex;align-items:center;gap:10px;background:#fff;border-radius:999px;padding:8px;border:1px solid #eef1f6;">
+              <div class="thumb" aria-hidden="true" style="display:none;"></div>
+              <button data-tab="all" class="active" role="tab" aria-selected="true" aria-label="All" style="background:transparent;border:0;padding:6px 14px;font-weight:800;border-radius:999px;">All</button>
+              <button data-tab="pending" role="tab" aria-selected="false" aria-label="Pending" style="background:transparent;border:0;padding:6px 14px;font-weight:800;border-radius:999px;">Pending</button>
+              <button data-tab="completed" role="tab" aria-selected="false" aria-label="Completed" style="background:transparent;border:0;padding:6px 14px;font-weight:800;border-radius:999px;">Completed</button>
+              <button data-tab="high" role="tab" aria-selected="false" aria-label="High Priority" style="background:transparent;border:0;padding:6px 14px;font-weight:800;border-radius:999px;">High</button>
+            </div>
+
+            <div style="display:flex;align-items:center;gap:8px">
+              <div class="search-inline" role="search" aria-label="Search tasks" style="width:240px">
+                <input id="search" placeholder="Search tasks..." aria-label="Search tasks" style="border:0;outline:0;width:100%;color:#0f172a" />
+              </div>
+
+              <div class="controls-row" style="justify-content:flex-end;align-items:center">
+                <label id="sortLabel" class="sort-label" for="sortSel" style="font-weight:700;color:var(--muted)">Sort</label>
+                <select id="sortSel" class="btn" style="padding:8px 10px;border-radius:10px;border:1px solid var(--panel-border);background:var(--panel-bg);color:#0f172a;margin-left:8px" aria-label="Sort tasks" data-label="Due date">
+                  <option value="due">Due date</option>
+                  <option value="priority">Priority</option>
+                  <option value="created">Newest</option>
+                </select>
+
+                <span id="sortDisplay" aria-hidden="true" style="margin-left:10px">Due date</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="taskList" style="min-height:220px"></div>
+      </div>
+
+      <aside class="panel" aria-labelledby="upcoming-title">
+        <h4 id="upcoming-title" style="margin:0 0 12px 0;font-size:16px">Upcoming Deadlines</h4>
+        <div id="deadlines" class="muted-note" style="font-size:15px">No upcoming deadlines.</div>
+
+        <div style="margin-top:18px">
+          <h4 style="margin:0 0 10px 0;font-size:15px">Quick Stats</h4>
+          <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">
+            <div style="display:flex;justify-content:space-between"><div class="muted-note">Avg Completion</div><div id="stat-avg">0%</div></div>
+            <div style="display:flex;justify-content:space-between"><div class="muted-note">Overdue</div><div id="stat-overdue">0</div></div>
+          </div>
+
+          <div style="margin-top:18px">
+            <h4 style="margin:0 0 10px 0;font-size:15px">Recoverable Deletes</h4>
+            <button id="btnRecoverList" class="btn secondary" type="button" style="padding:8px 12px;border-radius:10px;">View Recoverable</button>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <!-- View-only Modal (bigger & modern) -->
+  <div id="viewModal" aria-hidden="true">
+    <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="viewModalTitle">
+      <div class="dialog-header">
+        <h3 id="viewModalTitle">Task details</h3>
+        <button id="viewClose" class="close-x iconbtn" aria-label="Close dialog" type="button">✕</button>
+      </div>
+      <div class="dialog-body">
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div style="font-size:18px;font-weight:900" id="vTitle">Title</div>
+          <div id="vDesc" style="font-size:15px;color:var(--muted)">Description goes here.</div>
+        </div>
+
+        <div class="v-row">
+          <div style="flex:1">
+            <div style="display:flex;gap:12px;flex-wrap:wrap">
+              <div><div class="label">Due</div><div class="v-value" id="vDue">—</div></div>
+              <div><div class="label">Type</div><div class="v-value" id="vType">—</div></div>
+              <div><div class="label">Priority</div><div class="v-value" id="vPriority">—</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="label">Completion</div>
+          <div class="v-value" id="vProgress">0%</div>
+        </div>
+      </div>
+
+      <div class="dialog-footer">
+        <button id="viewOk" class="btn secondary">Close</button>
+      </div>
+    </div>
+  </div>
+
+{% endblock %}
+
+{% block scripts %}
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script>
+    (function(){
+      // Read-only planner JS (keeps previous logic) with the same API usage.
+      const listEl = document.getElementById('taskList');
+      const dlEl = document.getElementById('deadlines');
+      const statPending = document.getElementById('stat-pending');
+      const statCompleted = document.getElementById('stat-completed');
+      const statHigh = document.getElementById('stat-high');
+      const statWeek = document.getElementById('stat-week');
+      const searchEl = document.getElementById('search');
+      const seg = document.getElementById('seg');
+      const sortSel = document.getElementById('sortSel');
+
+      const viewModal = document.getElementById('viewModal');
+      const viewClose = document.getElementById('viewClose');
+      const viewOk = document.getElementById('viewOk');
+
+      let currentTab = 'all';
+      let currentSearch = '';
+
+      function fmtDate(dateStr){ if(!dateStr) return 'TBD'; try { const d=new Date(dateStr); return d.toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'}); } catch(e){ return dateStr; } }
+
+      async function apiGetTasks({ search='', filter='all', sort='due' } = {}) {
+        const q = new URLSearchParams();
+        if (search) q.set('search', search);
+        if (filter) q.set('filter', filter);
+        if (sort) q.set('sort', sort);
+        const res = await fetch(`/api/tasks?${q.toString()}`, { credentials: 'same-origin' });
+        if (!res.ok) throw new Error('Failed fetching tasks');
+        return res.json();
+      }
+
+      async function apiGetStats(){ const res = await fetch('/api/tasks/stats', { credentials: 'same-origin' }); if(!res.ok) throw new Error('stats failed'); return res.json(); }
+
+      function renderTasks(tasks){
+        listEl.innerHTML = '';
+        if(!tasks.length){ listEl.innerHTML = `<div style="padding:18px;color:var(--muted)">No tasks found.</div>`; return; }
+
+        const wrap = document.createElement('div'); wrap.className = 'timeline';
+        tasks.forEach(t => {
+          const el = document.createElement('div'); el.className = 'timeline-entry task-card';
+
+          el.innerHTML = `
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <div style="font-weight:900" class="title-clickable" data-id="${t.id}">${t.title}</div>
+                <div style="font-size:14px;color:var(--muted)">${fmtDate(t.dueDate)}</div>
+              </div>
+              <div style="margin-top:8px;color:var(--muted)" class="task-desc">${(t.desc||'')}</div>
+              <div style="margin-top:10px">${t.type ? `<span class=\"tag\">${t.type}</span>` : ''} ${t.priority ? `<span class=\"badge\">${t.priority}</span>` : ''}</div>
+            </div>
+            <div class="task-right">
+              <div style="margin-bottom:8px;font-weight:800">${t.progress || 0}%</div>
+              <div style="margin-bottom:6px"><button class="btn view-btn" data-id="${t.id}" type="button">View</button></div>
+            </div>
+          `;
+          wrap.appendChild(el);
+        });
+        listEl.appendChild(wrap);
+
+        setTimeout(()=>{
+          listEl.querySelectorAll('.view-btn, .title-clickable').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+              const id = btn.dataset.id;
+              if(!id) return;
+              try {
+                const res = await fetch(`/api/tasks/${id}`, { credentials: 'same-origin' });
+                if(!res.ok) throw new Error('failed');
+                const task = await res.json();
+                openViewModal(task);
+              } catch(err){
+                console.warn('Failed loading task', err);
+              }
+            });
+          });
+        }, 40);
+      }
+
+      async function renderDeadlinesAndStats(){
+        try {
+          const stats = await apiGetStats();
+          statPending.textContent = stats.pending;
+          statCompleted.textContent = stats.completed;
+          statHigh.textContent = stats.high;
+          statWeek.textContent = stats.dueWeek;
+          document.getElementById('stat-avg').textContent = (stats.avg || 0) + '%';
+          document.getElementById('stat-overdue').textContent = stats.overdue || 0;
+        } catch(e){ console.warn('stats fetch failed', e); }
+
+        try {
+          const all = await apiGetTasks({ search:'', filter:'pending', sort:'due' });
+          const today = new Date(); today.setHours(0,0,0,0);
+          const in7 = new Date(today.getTime() + 7*24*60*60*1000);
+          const upcoming = all.filter(t => t.dueDate).filter(t => { const d=new Date(t.dueDate); d.setHours(0,0,0,0); return d>=today && d<=in7; }).slice(0,5);
+          if(!upcoming.length) dlEl.innerHTML = `<div class="muted-note">No upcoming deadlines.</div>`;
+          else dlEl.innerHTML = upcoming.map(t=>`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div style="max-width:60%"><div style="font-weight:800">${t.title}</div><div style="color:var(--muted);font-size:13px">${(t.desc||'').slice(0,60)}</div></div><div style="text-align:right">${fmtDate(t.dueDate)}</div></div>`).join('');
+        } catch(e){ dlEl.innerHTML = `<div class="muted-note">Unable to load deadlines.</div>`; }
+      }
+
+      async function load(){
+        try {
+          const sortBy = sortSel.value || 'due';
+          const tasks = await apiGetTasks({ search: currentSearch, filter: currentTab, sort: sortBy });
+          renderTasks(tasks);
+          await renderDeadlinesAndStats();
+        } catch(e){ listEl.innerHTML = `<div style="padding:18px;color:var(--muted)">Failed loading tasks.</div>`; console.error(e); }
+      }
+
+      // modal
+      function openViewModal(task){
+        if(!task) return;
+        document.getElementById('vTitle').textContent = task.title || 'Untitled';
+        document.getElementById('vDesc').textContent = task.desc || '';
+        document.getElementById('vDue').textContent = fmtDate(task.dueDate);
+        document.getElementById('vType').textContent = task.type || '';
+        document.getElementById('vPriority').textContent = task.priority || '';
+        document.getElementById('vProgress').textContent = (task.progress || 0) + '%';
+        viewModal.style.display = 'flex'; viewModal.setAttribute('aria-hidden','false');
+        // trap focus lightly
+        setTimeout(()=> { const close = document.getElementById('viewClose'); if(close) close.focus(); }, 80);
+      }
+      function closeViewModal(){ viewModal.style.display = 'none'; viewModal.setAttribute('aria-hidden','true'); }
+
+      viewClose.addEventListener('click', closeViewModal);
+      viewOk.addEventListener('click', closeViewModal);
+      viewModal.addEventListener('click', (e)=> { if(e.target === viewModal) closeViewModal(); });
+      document.addEventListener('keydown', (e)=> { if(e.key === 'Escape') closeViewModal(); });
+
+      // controls
+      if (seg) {
+        seg.addEventListener('click', (e) => {
+          const btn = e.target.closest('button[data-tab]');
+          if (!btn) return;
+          [...seg.querySelectorAll('button')].forEach(b => { b.classList.remove('active'); b.setAttribute('aria-selected','false'); });
+          btn.classList.add('active'); btn.setAttribute('aria-selected','true'); currentTab = btn.dataset.tab; load();
+        });
+      }
+      if (sortSel) sortSel.addEventListener('change', () => load());
+      if (searchEl) searchEl.addEventListener('input', ()=> { currentSearch = searchEl.value.trim(); load(); });
+
+      document.addEventListener('DOMContentLoaded', ()=>{ load(); });
+    })();
+  </script>
+{% endblock %}

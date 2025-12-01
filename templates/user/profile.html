@@ -1,0 +1,722 @@
+{% extends "user/index.html" %}
+
+{% block head %}
+  <style>
+    :root{
+      --content-max: 1400px;
+      --card-max-width: 1200px;
+      --accent: #16a34a;
+      --emerald-600: #059669;
+      --muted: #6b7280;
+      --card-radius: 12px;
+      --chip-radius: 10px;
+      --shadow-sm: 0 8px 30px rgba(16,24,40,0.06);
+      --toast-success: #16a34a;
+      --toast-error: #b91c1c;
+    }
+
+    /* ---------- Top bar (white, auto-sized) ---------- */
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 1200;
+      background: #ffffff;
+      border-bottom: 1px solid #eef0ee;
+      padding: 18px 24px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:16px;
+      box-shadow: 0 2px 6px rgba(12,18,30,0.04);
+    }
+    .topbar-left { display:flex; align-items:center; gap:12px; }
+    .page-title { font-size:28px; font-weight:800; color:var(--emerald-600); margin:0; }
+    .page-sub { color:var(--muted); font-size:13px; margin-top:4px; }
+
+    /* Page inner */
+    .page-inner {
+      width: 100%;
+      max-width: var(--content-max);
+      margin: 0 auto;
+      padding: 20px 0 48px;
+      box-sizing: border-box;
+    }
+
+    .cards-col {
+      display:flex;
+      flex-direction:column;
+      gap:20px;
+      align-items:center;
+      width:100%;
+    }
+
+    .card {
+      width: 100%;
+      max-width: var(--card-max-width);
+      background:white;
+      border-radius:var(--card-radius);
+      border:1px solid #eef0ee;
+      box-shadow:var(--shadow-sm);
+      overflow:visible;
+    }
+
+    .card-header {
+      padding:14px 16px;
+      background:#fafcf9;
+      border-bottom:1px solid #eef0ee;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+    }
+    .card-body { padding:18px; }
+
+    .btn-edit-top {
+      background:var(--emerald-600);
+      color:#fff;
+      padding:8px 14px;
+      border-radius:10px;
+      font-weight:700;
+      border:none;
+      cursor:pointer;
+    }
+
+    .card-edit {
+      border:1.5px solid var(--emerald-600);
+      background:#fff;
+      color:var(--emerald-600);
+      padding:6px 10px;
+      border-radius:10px;
+      font-weight:700;
+      cursor:pointer;
+    }
+
+    .profile-row { display:flex; gap:18px; align-items:center; justify-content:flex-start; }
+    .avatar {
+      width:64px; height:64px; border-radius:999px; display:grid; place-items:center;
+      background:linear-gradient(135deg,var(--emerald-600),var(--accent)); color:#fff; font-size:26px;
+      flex-shrink:0;
+    }
+    .profile-meta { flex:1; min-width:0; }
+    .profile-name { font-weight:800; font-size:1.05rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .profile-email { color:var(--muted); margin-top:6px; font-size:0.95rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .status-pill {
+      display:inline-block; background:var(--emerald-600); color:#fff; padding:6px 10px; border-radius:999px; font-weight:700; margin-top:8px;
+    }
+
+    .senior-grid {
+      display:grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap:14px;
+      align-items:start;
+    }
+
+    .chip {
+      background:#fff;
+      border:1px solid #eef0ee;
+      border-radius:var(--chip-radius);
+      padding:14px;
+      min-height:70px;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      gap:6px;
+    }
+    .chip .label { font-size:12px; color:var(--muted); }
+    .chip .value { font-weight:800; color:#111827; }
+
+    .personal-grid { display:grid; grid-template-columns: repeat(3, 1fr); gap:14px; }
+    .personal-grid .chip { min-height:64px; }
+
+    .settings-list { display:flex; flex-direction:column; gap:10px; }
+    .settings-row { display:flex; align-items:center; justify-content:space-between; padding:6px 0; border-bottom:1px solid #f0f2f1; }
+
+
+    /* modal & animations */
+    .modal {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.28);
+      display: none; align-items: center; justify-content: center; z-index: 2000; padding: 20px;
+    }
+    .modal.open { display:flex; }
+    .modal-card {
+      background:#fff; width:100%; max-width:780px; border-radius:12px; overflow:hidden; box-shadow:0 18px 60px rgba(0,0,0,0.12);
+      transform-origin: top center;
+      transform: translateY(-12px) scale(.99);
+      opacity: 0;
+      transition: transform .26s cubic-bezier(.2,.9,.3,1), opacity .22s ease;
+    }
+    .modal.open .modal-card { transform: translateY(0) scale(1); opacity:1; }
+    .modal .card-header { background:#fff; border-bottom:1px solid #eef0ee; display:flex; justify-content:space-between; align-items:center; gap:12px; padding:14px 16px; }
+    .modal .card-body { padding:18px; max-height:60vh; overflow:auto; }
+    .modal .modal-actions { padding:12px 18px; border-top:1px solid #eef0ee; display:flex; justify-content:flex-end; gap:10px; }
+
+    .form-row { margin-bottom:12px; width:100%; }
+    .form-row label { display:block; font-weight:700; margin-bottom:6px; color:#111827; font-size:13px; }
+    .form-row input { width:100%; padding:10px 12px; border-radius:8px; border:1px solid #e6e9e8; font-size:14px; box-sizing:border-box; }
+
+    /* Save button states & animation */
+    .btn-save {
+      background:var(--emerald-600);
+      color:#fff;
+      padding:8px 12px;
+      border-radius:8px;
+      border:none;
+      cursor:pointer;
+      font-weight:700;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      min-width:80px;
+    }
+    .btn-save:disabled { opacity:0.55; transform:none; cursor:not-allowed; }
+    .btn-save.saving {
+      transform: translateY(0);
+      transition: transform .18s ease;
+    }
+    .btn-save .spinner {
+      width:16px; height:16px; border-radius:50%; border:2px solid rgba(255,255,255,0.2); border-top-color:#fff; animation: spin .8s linear infinite; display:inline-block;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* TOASTS */
+    .toast-wrap {
+      position: fixed;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: 34px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      align-items: center;
+      pointer-events: none;
+    }
+    .toast {
+      pointer-events: auto;
+      min-width: 220px;
+      max-width: 520px;
+      background: #fff;
+      border-radius: 10px;
+      padding: 10px 14px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+      display:flex;
+      gap:12px;
+      align-items:center;
+      border-left: 4px solid var(--toast-success);
+      font-weight:600;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: transform .22s ease, opacity .2s ease;
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .toast.success { border-left-color: var(--toast-success); color: #065f46; }
+    .toast.error { border-left-color: var(--toast-error); color: #7f1d1d; }
+    .toast .icon { width:22px; height:22px; display:grid; place-items:center; border-radius:6px; background:rgba(0,0,0,0.03); }
+    .toast .action-btn {
+      margin-left:auto;
+      background:transparent;
+      border:1.5px solid rgba(0,0,0,0.06);
+      padding:6px 10px;
+      border-radius:8px;
+      font-weight:700;
+      cursor:pointer;
+      color:var(--emerald-600);
+      background:#fff;
+    }
+
+    @media (max-width:1100px) {
+      :root { --content-max: 1100px; --card-max-width: 980px; }
+    }
+    @media (max-width:900px) {
+      .senior-grid, .personal-grid { grid-template-columns: repeat(2, 1fr); }
+      .page-inner { padding: 0 10px; }
+    }
+    @media (max-width:640px) {
+      .senior-grid, .personal-grid { grid-template-columns: 1fr; }
+      .topbar { flex-direction:column; align-items:flex-start; gap:10px; padding:12px; }
+      .btn-edit-top { align-self:flex-start; }
+      .cards-col { padding: 0 8px; }
+    }
+  </style>
+{% endblock %}
+
+{% block body %}
+
+  <!-- Top bar -->
+  <header class="topbar" role="banner">
+    <div class="topbar-left">
+      <div>
+        <div class="page-title">Profile</div>
+        <div class="page-sub">Manage your personal and academic information</div>
+      </div>
+    </div>
+    <div>
+      <button class="btn-edit-top" id="btnEditProfile">Edit Profile</button>
+    </div>
+  </header>
+
+  <div class="page-inner">
+    <div class="cards-col">
+
+            <!-- Profile card -->
+      <section class="card">
+        <div class="card-body">
+          <div class="profile-row">
+            <div class="avatar"><i class="fas fa-user"></i></div>
+            <div class="profile-meta">
+              <div id="profileName" class="profile-name">Last Name, First Name</div>
+              <div id="profileEmail" class="profile-email">student@university.edu</div>
+              <div><span id="statusBadge" class="status-pill">Active Student</span></div>
+            </div>
+            <div>
+              <button class="card-edit" id="btnEditProfileSmall">Edit</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Senior High School Information -->
+      <section class="card">
+        <div class="card-header">
+          <h3 style="margin:0;font-size:16px;">Senior High School Information</h3>
+          <button class="card-edit" id="btnEditAcademic">Edit</button>
+        </div>
+        <div class="card-body">
+          <div class="senior-grid">
+            <div class="chip"><div class="label">Senior High School</div><div id="school" class="value">School Name</div></div>
+            <div class="chip"><div class="label">Strand / Track</div><div id="strand" class="value">STEM</div></div>
+            <div class="chip"><div class="label">Grade Level</div><div id="gradeLevel" class="value">Grade 12</div></div>
+
+            <div class="chip"><div class="label">School Year</div><div id="schoolYear" class="value">2022 - 2023</div></div>
+            <div class="chip"><div class="label">LRN</div><div id="lrn" class="value">0000-0000-0000</div></div>
+            <div class="chip"><div class="label">Adviser / Section</div><div id="adviserSection" class="value">Mrs. Smith / Section A</div></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Personal Information -->
+      <section class="card">
+        <div class="card-header">
+          <h3 style="margin:0;font-size:16px;">Personal Information</h3>
+          <button class="card-edit" id="btnEditPersonal">Edit</button>
+        </div>
+        <div class="card-body">
+          <div class="personal-grid">
+            <div class="chip"><div class="label">Phone</div><div id="phone" class="value">+63 912 345 6789</div></div>
+            <div class="chip"><div class="label">Date of Birth</div><div id="dob" class="value">January 15, 2003</div></div>
+            <div class="chip"><div class="label">Address</div><div id="address" class="value">Manila, Philippines</div></div>
+            <div class="chip"><div class="label">Emergency Contact</div><div id="emergency" class="value">+63 998 765 4321</div></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Account Settings -->
+      <section class="card">
+        <div class="card-header">
+          <h3 style="margin:0;font-size:16px;">Account Settings</h3>
+        </div>
+        <div class="card-body">
+          <div class="settings-list">
+
+            <div class="settings-row">
+              <div>
+                <div class="row-title">Change Password</div>
+                <div class="row-sub">Update your account password</div>
+              </div>
+              <div><button class="card-edit" id="btnChangePassword">Change</button></div>
+            </div>
+
+            <div class="settings-row">
+              <div>
+                <div class="row-title">Email Notifications</div>
+                <div class="row-sub">Receive updates about your activities</div>
+              </div>
+              <div><input type="checkbox" id="emailNotifications"/></div>
+            </div>
+
+            <div class="settings-row">
+              <div>
+                <div class="row-title">Two-Factor Authentication</div>
+                <div class="row-sub">Add an extra layer of security</div>
+              </div>
+              <div><button class="card-edit" id="btnToggle2FA">Enable</button></div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal" id="modal" aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="card-header">
+        <div>
+          <h3 id="modalTitle" style="margin:0">Edit</h3>
+          <div id="modalSub" style="color:var(--muted);font-size:13px;margin-top:6px"></div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button class="card-edit" id="modalClose">Close</button>
+        </div>
+      </div>
+
+      <div class="card-body" id="modalBody"></div>
+
+      <div class="modal-actions">
+        <button class="btn-cancel" id="modalCancel">Cancel</button>
+        <button class="btn-save" id="modalSave" disabled>
+          <span class="label">Save</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast container -->
+  <div class="toast-wrap" id="toastWrap" aria-live="polite" aria-atomic="true"></div>
+
+{% endblock %}
+
+
+{% block scripts %}
+  {{ super() }}
+
+  <script>
+    /* ===============================
+       Local Storage + Defaults
+    =============================== */
+    const STORAGE_KEY = 'studentProfileData_v5';
+
+    const defaultData = {
+      profile:{
+        lastName:'Last Name',
+        firstName:'First Name',
+        middleName:'',
+        suffix:'',
+        email:'student@university.edu',
+        status:'Active Student'
+      },
+      academic:{
+        school:'School Name',
+        strand:'STEM',
+        gradeLevel:'Grade 12',
+        schoolYear:'2022 - 2023',
+        lrn:'0000-0000-0000',
+        adviserSection:'Mrs. Smith / Section A'
+      },
+      personal:{
+        phone:'+63 912 345 6789',
+        dob:'January 15, 2003',
+        address:'Manila, Philippines',
+        emergency:'+63 998 765 4321'
+      },
+      settings:{
+        emailNotifications:true,
+        twoFactor:false
+      }
+    };
+
+    function loadData(){
+      try{
+        const raw = localStorage.getItem(STORAGE_KEY);
+        return raw ? JSON.parse(raw) : structuredClone(defaultData);
+      }catch(e){
+        return structuredClone(defaultData);
+      }
+    }
+
+    function saveData(d){
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(d));
+    }
+
+    let state = loadData();
+    const $ = id => document.getElementById(id);
+
+
+    /* ===============================
+       DOM References
+    =============================== */
+    const refs = {
+      profileName: $('profileName'),
+      profileEmail: $('profileEmail'),
+      statusBadge: $('statusBadge'),
+
+      school: $('school'),
+      strand: $('strand'),
+      gradeLevel: $('gradeLevel'),
+      schoolYear: $('schoolYear'),
+      lrn: $('lrn'),
+      adviserSection: $('adviserSection'),
+
+      phone: $('phone'),
+      dob: $('dob'),
+      address: $('address'),
+      emergency: $('emergency'),
+
+      emailNotifications: $('emailNotifications'),
+      btnToggle2FA: $('btnToggle2FA'),
+
+      btnEditProfile: $('btnEditProfile'),
+      btnEditProfileSmall: $('btnEditProfileSmall'),
+      btnEditAcademic: $('btnEditAcademic'),
+      btnEditPersonal: $('btnEditPersonal'),
+      btnChangePassword: $('btnChangePassword'),
+
+      modal: $('modal'),
+      modalBody: $('modalBody'),
+      modalTitle: $('modalTitle'),
+      modalSub: $('modalSub'),
+      modalSave: $('modalSave'),
+      modalCancel: $('modalCancel'),
+      modalClose: $('modalClose'),
+
+      toastWrap: $('toastWrap')
+    };
+
+
+    /* ===============================
+       Rendering
+    =============================== */
+    function getDisplayName(){
+      const p = state.profile;
+      const middle = p.middleName ? (p.middleName.trim().length === 1 ? p.middleName.trim()+'.' : p.middleName.trim()) : '';
+      const suffix = p.suffix ? ', '+p.suffix.trim() : '';
+      const mid = middle ? ' '+middle : '';
+      return `${p.lastName}, ${p.firstName}${mid}${suffix}`;
+    }
+
+    function render(){
+      refs.profileName.textContent = getDisplayName();
+      refs.profileEmail.textContent = state.profile.email;
+      refs.statusBadge.textContent = state.profile.status;
+
+      refs.school.textContent = state.academic.school;
+      refs.strand.textContent = state.academic.strand;
+      refs.gradeLevel.textContent = state.academic.gradeLevel;
+      refs.schoolYear.textContent = state.academic.schoolYear;
+      refs.lrn.textContent = state.academic.lrn;
+      refs.adviserSection.textContent = state.academic.adviserSection;
+
+      refs.phone.textContent = state.personal.phone;
+      refs.dob.textContent = state.personal.dob;
+      refs.address.textContent = state.personal.address;
+      refs.emergency.textContent = state.personal.emergency;
+
+      refs.emailNotifications.checked = !!state.settings.emailNotifications;
+      refs.btnToggle2FA.textContent = state.settings.twoFactor ? 'Disable' : 'Enable';
+    }
+
+
+    /* ===============================
+       Toast System
+    =============================== */
+    function showToast(msg, opts={type:'success', duration:3000}){
+      const div = document.createElement('div');
+      div.className = 'toast show '+(opts.type);
+      div.textContent = msg;
+
+      div.style.position = 'fixed';
+      div.style.left = '50%';
+      div.style.transform = 'translateX(-50%)';
+      div.style.bottom = '34px';
+      div.style.background = '#fff';
+      div.style.padding = '10px 14px';
+      div.style.borderRadius = '10px';
+      div.style.boxShadow = '0 8px 30px rgba(0,0,0,0.12)';
+      div.style.fontWeight = '700';
+      div.style.zIndex = '9999';
+
+      refs.toastWrap.appendChild(div);
+
+      setTimeout(() => {
+        div.style.opacity = '0';
+        setTimeout(() => div.remove(), 300);
+      }, opts.duration);
+    };
+
+
+    /* ===============================
+       Modal Helpers
+    =============================== */
+    let currentForm = null;
+    let initialFormState = '';
+    let requireConfirmOnClose = false;
+
+    function serializeModalFields(){
+      return [...refs.modalBody.querySelectorAll('input, select')]
+        .map(i => `${i.id}=${i.value}`)
+        .join('|');
+    }
+
+    function buildInput(labelText, id, value='', type='text'){
+      const wrap = document.createElement('div');
+      wrap.className = 'form-row';
+      wrap.style.marginBottom = '12px';
+
+      const label = document.createElement('label');
+      label.textContent = labelText;
+
+      const input = document.createElement('input');
+      input.type = type;
+      input.id = id;
+      input.value = value;
+
+      wrap.append(label, input);
+      return wrap;
+    }
+
+    function buildForm(form){
+      if(form === 'profile'){
+        refs.modalBody.append(
+          buildInput('Last Name','lastName', state.profile.lastName),
+          buildInput('First Name','firstName', state.profile.firstName),
+          buildInput('Middle Name','middleName', state.profile.middleName),
+          buildInput('Suffix','suffix', state.profile.suffix),
+          buildInput('Email','email', state.profile.email, 'email'),
+          buildInput('Status','status', state.profile.status),
+        );
+      }
+
+      else if(form === 'academic'){
+        refs.modalBody.append(
+          buildInput('Senior High School','school', state.academic.school),
+          buildInput('Strand','strand', state.academic.strand),
+          buildInput('Grade Level','gradeLevel', state.academic.gradeLevel),
+          buildInput('School Year','schoolYear', state.academic.schoolYear),
+          buildInput('LRN','lrn', state.academic.lrn),
+          buildInput('Adviser / Section','adviserSection', state.academic.adviserSection),
+        );
+      }
+
+      else if(form === 'personal'){
+        refs.modalBody.append(
+          buildInput('Phone','phone', state.personal.phone),
+          buildInput('Date of Birth','dob', state.personal.dob),
+          buildInput('Address','address', state.personal.address),
+          buildInput('Emergency Contact','emergency', state.personal.emergency),
+        );
+      }
+
+      else if(form === 'password'){
+        refs.modalBody.append(
+          buildInput('New Password','newPassword','', 'password'),
+          buildInput('Confirm Password','confirmPassword','', 'password'),
+        );
+      }
+    }
+
+
+    function openModal(title, form){
+      currentForm = form;
+      refs.modalTitle.textContent = title;
+      refs.modalBody.innerHTML = '';
+      buildForm(form);
+
+      refs.modal.classList.add('open');
+      refs.modal.setAttribute('aria-hidden','false');
+
+      refs.modalSave.disabled = true;
+      initialFormState = serializeModalFields();
+      requireConfirmOnClose = false;
+
+      refs.modalBody.querySelectorAll('input').forEach(i =>
+        i.addEventListener('input', onModalChange)
+      );
+    }
+
+    function onModalChange(){
+      const dirty = serializeModalFields() !== initialFormState;
+      requireConfirmOnClose = dirty;
+      refs.modalSave.disabled = !dirty;
+    }
+
+    function closeModal(force=false){
+      refs.modal.classList.remove('open');
+      refs.modal.setAttribute('aria-hidden','true');
+      refs.modalBody.innerHTML = '';
+      refs.modalSave.disabled = true;
+      currentForm = null;
+    }
+
+
+    /* ===============================
+       Saving Logic
+    =============================== */
+    refs.modalSave.addEventListener('click', async () => {
+      if(!currentForm) return;
+
+      if(currentForm === 'profile'){
+        state.profile.lastName = $('lastName').value;
+        state.profile.firstName = $('firstName').value;
+        state.profile.middleName = $('middleName').value;
+        state.profile.suffix = $('suffix').value;
+        state.profile.email = $('email').value;
+        state.profile.status = $('status').value;
+      }
+
+      else if(currentForm === 'academic'){
+        state.academic.school = $('school').value;
+        state.academic.strand = $('strand').value;
+        state.academic.gradeLevel = $('gradeLevel').value;
+        state.academic.schoolYear = $('schoolYear').value;
+        state.academic.lrn = $('lrn').value;
+        state.academic.adviserSection = $('adviserSection').value;
+      }
+
+      else if(currentForm === 'personal'){
+        state.personal.phone = $('phone').value;
+        state.personal.dob = $('dob').value;
+        state.personal.address = $('address').value;
+        state.personal.emergency = $('emergency').value;
+      }
+
+      else if(currentForm === 'password'){
+        let p1 = $('newPassword').value;
+        let p2 = $('confirmPassword').value;
+        if(p1 !== p2){
+          showToast("Passwords do not match", {type:'error'});
+          return;
+        }
+      }
+
+      saveData(state);
+      render();
+      showToast("Saved successfully");
+      closeModal(true);
+    });
+
+
+    /* ===============================
+       Event Bindings
+    =============================== */
+    refs.btnEditProfile.onclick = () => openModal('Edit Profile','profile');
+    refs.btnEditProfileSmall.onclick = () => openModal('Edit Profile','profile');
+    refs.btnEditAcademic.onclick = () => openModal('Edit Academic Info','academic');
+    refs.btnEditPersonal.onclick = () => openModal('Edit Personal Info','personal');
+    refs.btnChangePassword.onclick = () => openModal('Change Password','password');
+
+    refs.modalCancel.onclick = () => closeModal();
+    refs.modalClose.onclick = () => closeModal();
+    refs.modal.addEventListener('click', e => {
+      if(e.target === refs.modal) closeModal();
+    });
+
+    /* toggle settings */
+    refs.emailNotifications.onchange = e => {
+      state.settings.emailNotifications = e.target.checked;
+      saveData(state);
+      showToast("Email notification preference saved");
+    };
+
+    refs.btnToggle2FA.onclick = () => {
+      state.settings.twoFactor = !state.settings.twoFactor;
+      saveData(state);
+      render();
+      showToast("Two-factor setting updated");
+    };
+
+    /* initial render */
+    document.addEventListener('DOMContentLoaded', render);
+  </script>
+{% endblock %}

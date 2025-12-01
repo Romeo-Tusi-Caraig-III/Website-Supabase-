@@ -1,0 +1,1359 @@
+{% extends "admin/index.html" %}
+
+{% block title %}Planner — Student Hub{% endblock %}
+
+{% block head %}
+  <!-- flatpickr CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <!-- shared UI styles (keeps tokens centralized) -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/ui-common.css') }}">
+  <!-- reference image (local path): /mnt/data/c80e29fe-c8f3-449e-b511-2478a300f70c.png -->
+  <style>
+    /* Planner-specific styles — uses tokens from admin/index.html */
+    :root{
+      --planner-accent: #0ea5e9;
+      --planner-accent-2: #10b981;
+      --accent-2: #f97316;
+      --card-gap: 18px;
+      --muted: #64748b;
+      --white: #ffffff;
+      --gray-200: #e6edf3;
+      --gray-600: #6b7280;
+      --shadow-sm: 0 6px 18px rgba(12,18,30,0.04);
+    }
+
+    /* Basic resets / accessibility helpers */
+    .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+
+    /* Planner layout */
+    .planner-page{ display:flex; flex-direction:column; gap:16px; }
+    .page-title { font-size:20px; font-weight:900; color:#0f172a }
+
+    .main-grid{ display:grid; grid-template-columns: 1fr 340px; gap:var(--card-gap); margin-top:6px }
+    @media(max-width:1000px){ .main-grid{ grid-template-columns:1fr } }
+
+    .panel{ padding:16px; border-radius:12px; background:var(--white); border:1px solid var(--gray-200); box-shadow:var(--shadow-sm); overflow:visible }
+
+    /* segmented control improved for readable labels — Option B (more space + pixel-perfect thumb) */
+    .seg{
+      position:relative;
+      background:#ffffff;
+      border-radius:999px;
+      display:inline-flex;
+      gap:14px;            /* more space between buttons */
+      padding:10px; 
+      align-items:center;
+      border:1px solid var(--gray-200);
+      box-shadow: 0 6px 18px rgba(12,18,30,0.03);
+      margin-left:auto; /* push to right in header */
+      outline: none;
+    }
+    .seg:focus-within { outline: none; }
+
+    /* thumb sits behind the buttons (Option B) */
+    .seg .thumb{
+      position:absolute;
+      left:10px;
+      top:10px;
+      bottom:10px;
+      /* make the gradient run left→right so the fill reads as a single "fill" */
+      background: linear-gradient(90deg, var(--planner-accent), var(--planner-accent-2));
+      border-radius:999px;
+      transform:translateX(0);
+      transition: transform .22s cubic-bezier(.2,.9,.3,1), width .14s ease, opacity .14s ease;
+      box-shadow: 0 8px 22px rgba(16,185,129,0.12);
+      z-index:1;
+      pointer-events:none;
+      opacity:1;
+      will-change: transform, width;
+    }
+
+    .seg button{
+      position:relative;
+      z-index:2;
+      background:transparent;
+      border-radius:999px;
+      border:0;
+      padding:10px 16px;
+      font-weight:800;
+      color:#065f46; /* green text that reads on white */
+      cursor:pointer;
+      transition: color .14s ease, transform .14s ease, box-shadow .12s ease;
+      display:inline-flex;align-items:center;gap:8px;
+      font-size:13px;
+      min-width:68px;         /* ensure a minimum width so buttons look detached */
+      text-align:center;
+    }
+    .seg button .seg-icon{ font-size:14px; display:inline-block; width:18px; text-align:center }
+    .seg button .seg-label{ display:inline-block }
+
+    .seg button.active{
+      color:#ffffff !important;
+      font-weight:900;
+      transform:translateY(-1px);
+      z-index:3;
+    }
+
+    /* keyboard focus styling on the button only */
+    .seg button:focus { outline: none; box-shadow: none; }
+    .seg button:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 4px rgba(16,185,129,0.12);
+      border-radius: 999px;
+      z-index:4;
+    }
+
+    /* compact variant: smaller thumb, tighter padding */
+    .seg.seg--compact .thumb{ height:30px; top:7px; bottom:7px; box-shadow: 0 6px 14px rgba(16,185,129,0.10); }
+    .seg.seg--compact button{ padding:6px 10px; font-size:13px }
+
+    /* brand color variant: alternative thumb gradient + white active text */
+    .seg.seg--brand .thumb{ background: linear-gradient(180deg, var(--planner-accent), var(--planner-accent-2)) }
+    .seg.seg--brand button{ color:#065f46 }
+    .seg.seg--brand button.active{ color:#fff }
+
+    /* icon-only variant: hide labels, show icons only (use aria-labels on buttons) */
+    .seg.seg--icon button .seg-label{ position:absolute; left:-9999px; width:1px; height:1px; overflow:hidden }
+    .seg.seg--icon button{ padding:8px; }
+
+    @media(max-width:640px){
+      .seg .thumb { height:34px; top:6px; bottom:6px; }
+      .seg button { padding:8px 10px; }
+    }
+
+    /* search, badges, tasks, modal (kept minimal / consistent) */
+    .search-inline { display:flex;align-items:center;gap:8px;border-radius:10px;padding:6px 8px;border:1px solid var(--gray-200);background:var(--white) }
+    .task-card{ display:flex; gap:12px; align-items:stretch; border-radius:12px; padding:12px; border:1px solid #eef1f6; background:linear-gradient(180deg,#fff,#fff); margin-bottom:12px; }
+    .timeline-entry{ display:flex; gap:12px; align-items:flex-start; background:linear-gradient(180deg,#fff,#fff); border-radius:10px; padding:10px; border:1px solid #f1f3f5 }
+    .badge{ display:inline-block; padding:6px 8px; border-radius:999px; font-weight:800; font-size:12px; border:1px solid rgba(0,0,0,0.04) }
+    .priority-high{ background:#fff7f7; color:#b91c1c; border-color:#fecaca; }
+    .priority-medium{ background:#fff7ed; color:#c2410c; border-color:#fed7aa; }
+    .priority-low{ background:#f0fdf4; color:#065f46; border-color:#bbf7d0; }
+    .tag{ display:inline-block; padding:6px 8px; border-radius:8px; background:#f3f4f6; color:var(--gray-700); font-weight:700; font-size:12px; margin-right:6px }
+    .tag.secondary{ background:#eef2ff; color:#4f46e5 }
+
+    /* sort control styling: smaller, right-aligned, high-contrast */
+    .controls-row{ display:flex; align-items:center; gap:8px; }
+    #sortSel{ width:96px; padding:6px 8px; border-radius:8px; border:1px solid var(--gray-200); background:var(--white); color:#0f172a; font-weight:700; font-size:12px }
+    #sortSel option{ color:#0f172a }
+    .sort-label{ font-weight:700;color:var(--gray-600);font-size:13px;margin-right:6px }
+
+    @media(max-width:640px){
+      #sortSel{ width:100%; }
+      .controls-row{ width:100%; justify-content:flex-end }
+    }
+
+    /* modal + floating labels
+       - Raise modal/dialog stacking context so native select menus inside dialogs appear above overlay
+    */
+    #modal{ display:none; position:fixed; inset:0; align-items:center; justify-content:center; z-index:10050; background:rgba(8,12,16,0.18) }
+    .dialog{ width:min(760px,96%); background:var(--white); border-radius:12px; box-shadow:0 24px 60px rgba(12,18,30,0.12); overflow:visible; display:flex; flex-direction:column; position:relative; z-index:10060; }
+    /* stats-modal specific compact spacing */
+    .dialog.stats { width:min(620px,90%); z-index:10060; }
+    .dialog.stats .timeline-entry, .dialog.stats .task-card { padding:8px; margin-bottom:8px; border-radius:10px }
+    .dialog.stats .timeline-entry { border-radius:10px }
+    .dialog.stats .actions-row { display:flex; gap:8px }
+    .dialog.stats .dialog-footer { display:none }
+    .dialog-header{ display:flex; justify-content:space-between; align-items:center; padding:12px 16px; border-bottom:1px solid var(--gray-200) }
+    .dialog-body{ padding:16px }
+    .dialog-footer{ padding:12px 16px; display:flex; justify-content:flex-end; gap:8px; border-top:1px solid var(--gray-200) }
+    .field{ position:relative; margin-bottom:10px }
+    .floating-label{ position:absolute; left:12px; top:10px; font-size:13px; color:var(--gray-600); pointer-events:none; transform-origin:left top; transition: all .14s ease }
+    .field input, .field textarea, .field select{ width:100%; padding:14px 12px 10px; border-radius:8px; border:1px solid var(--gray-200); background:var(--white); font-size:14px }
+    .field.has-value .floating-label, .field input:focus + .floating-label, .field textarea:focus + .floating-label, .field select:focus + .floating-label { transform: translateY(-10px) scale(.92); color:var(--gray-600) }
+
+    /* modal visual warning */
+    .modal-warning{ display:block; margin-bottom:12px; padding:10px 12px; border-radius:8px; background:linear-gradient(90deg,#fff7ed,#fff); border:1px solid rgba(252,211,77,0.25); color:#92400e; font-weight:700; }
+
+    /* focus styles */
+    :focus { outline: 3px solid rgba(59,130,246,0.6); outline-offset: 2px; box-shadow: 0 3px 8px rgba(59,130,246,0.12); }
+    button:focus, .btn:focus { outline: 3px solid rgba(59,130,246,0.85); }
+
+    /* toast container */
+    #toast-container { position:fixed; right:18px; top:18px; z-index:15000; pointer-events:none; }
+    .toast { pointer-events:auto; padding:10px 12px; border-radius:8px; color:#fff; font-weight:700; margin-top:8px; box-shadow:0 6px 18px rgba(0,0,0,0.06); display:flex; gap:8px; align-items:center; }
+
+    /* visible sort pill (mirrors current selection) */
+    #sortDisplay {
+      display:inline-block;
+      min-width:88px;
+      padding:6px 12px;
+      border-radius:999px;
+      border:2px solid rgba(14,165,233,0.18);
+      background: linear-gradient(180deg,#ffffff,#f2fbff);
+      color: #064e8a;
+      font-weight:800;
+      font-size:13px;
+      text-align:center;
+      box-shadow: 0 6px 16px rgba(14,165,233,0.06);
+      transition: transform .18s cubic-bezier(.2,.9,.3,1), opacity .12s ease;
+      margin-left:8px;
+      vertical-align:middle;
+    }
+
+    /* keep select z-index default — modal stacking controls dropdown layering */
+    select { color: #0f172a; background: #ffffff; position: relative; z-index: auto; -webkit-appearance: menulist; appearance: menulist; }
+    select option { color: #0f172a; background: #ffffff; }
+    select:focus { outline: 3px solid rgba(16,185,129,0.12); }
+
+    /* fade helpers */
+    .fade-out { opacity:0; transform: translateY(-6px) scale(.995); }
+    .fade-in  { opacity:1; transform: translateY(0) scale(1); }
+
+    @media(max-width:640px){
+      .task-right{ display:none }
+      .main-grid{ grid-template-columns:1fr }
+      #sortDisplay{ min-width:64px; padding:5px 8px; font-size:12px; }
+    }
+  </style>
+{% endblock %}
+
+{% block body %}
+  <a href="#main-content" class="sr-only" id="skip-link">Skip to main content</a>
+
+  <div class="planner-page" id="main-content">
+
+    <!-- restored topbar (title + actions + summary chips) -->
+    <div class="site-topbar panel" role="banner" aria-label="Planner topbar">
+      <div class="topbar-row" style="display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%">
+        <div style="display:flex;flex-direction:column;gap:10px;min-width:0">
+          <div style="display:flex;flex-direction:column;gap:6px;min-width:0">
+            <h1 class="page-title" style="margin:0">Planner</h1>
+            <div class="muted-note" style="margin-top:2px">Organize your assignments and study schedule — timeline & board views.</div>
+          </div>
+
+          <!-- moved actions to the left under the title for better layout -->
+          <div class="topbar-actions" style="display:flex;gap:8px;align-items:center;margin-top:6px">
+            <button id="toggleView" class="btn" type="button" aria-pressed="true" aria-label="Toggle timeline or board view">Timeline View</button>
+            <button id="btnAdd" class="btn primary" type="button" aria-label="Add task">+ Add Task</button>
+            <button id="btnExportPlanner" class="btn" type="button" aria-label="Export tasks">Export</button>
+          </div>
+        </div>
+
+        <!-- right column: stat tiles only (kept visually on the right) -->
+        <div style="display:flex;align-items:center;gap:12px">
+          <button id="top-pending" class="stat-tile" type="button" aria-label="View pending tasks"><div class="stat-label">Pending Tasks</div><div class="stat-number" id="stat-pending">0</div></button>
+          <button id="top-completed" class="stat-tile" type="button" aria-label="View completed tasks"><div class="stat-label">Completed</div><div class="stat-number" id="stat-completed">0</div></button>
+          <button id="top-high" class="stat-tile" type="button" aria-label="View high priority tasks"><div class="stat-label">High Priority</div><div class="stat-number" id="stat-high">0</div></button>
+          <button id="top-week" class="stat-tile" type="button" aria-label="View due this week"><div class="stat-label">Due This Week</div><div class="stat-number" id="stat-week">0</div></button>
+        </div>
+      </div>
+
+      <div class="topbar-row" style="display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%;margin-top:14px;border-top:1px solid var(--gray-200);padding-top:12px">
+        <!-- left area intentionally left blank to keep spacing clean and preserve visual hierarchy -->
+        <div style="min-width:0"></div>
+
+        <div style="display:flex;gap:12px;align-items:center">
+          <!-- right area reserved for additional controls if needed (kept minimal) -->
+        </div>
+      </div>
+    </div>
+
+    <div class="main-grid">
+      <div class="panel">
+        <div class="flex-between" style="margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;">
+          <strong>All Tasks</strong>
+
+          <div style="display:flex;align-items:center;gap:12px">
+            <div id="seg" class="seg seg--compact seg--brand" data-tab="all" aria-label="Task filters" role="tablist" tabindex="0">
+              <div class="thumb" aria-hidden="true"></div>
+              <button data-tab="all" class="active" role="tab" aria-selected="true" aria-label="All">All</button>
+              <button data-tab="pending" role="tab" aria-selected="false" aria-label="Pending">Pending</button>
+              <button data-tab="completed" role="tab" aria-selected="false" aria-label="Completed">Completed</button>
+              <button data-tab="high" role="tab" aria-selected="false" aria-label="High Priority">High</button>
+            </div>
+
+            <div style="display:flex;align-items:center;gap:8px">
+              <div class="search-inline" role="search" aria-label="Search tasks" style="width:220px">
+                <input id="search" placeholder="Search tasks..." aria-label="Search tasks" style="border:0;outline:0;width:100%;color:#0f172a" />
+              </div>
+
+              <div class="controls-row" style="justify-content:flex-end;align-items:center">
+                <label id="sortLabel" class="sort-label" for="sortSel">Sort</label>
+                <select id="sortSel" class="btn" style="padding:6px 8px;border-radius:8px;border:1px solid var(--gray-200);background:var(--white);color:#0f172a" aria-label="Sort tasks" data-label="Due date">
+                  <option value="due">Due date</option>
+                  <option value="priority">Priority</option>
+                  <option value="created">Newest</option>
+                </select>
+
+                <!-- visible pill that mirrors selection -->
+                <span id="sortDisplay" aria-hidden="true">Due date</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="taskList" style="min-height:220px"></div>
+      </div>
+
+      <aside class="panel" aria-labelledby="upcoming-title">
+        <h4 id="upcoming-title" style="margin:0 0 12px 0">Upcoming Deadlines</h4>
+        <div id="deadlines" class="muted-note">No upcoming deadlines.</div>
+
+        <div style="margin-top:18px">
+          <h4 style="margin:0 0 10px 0">Quick Stats</h4>
+          <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">
+            <div style="display:flex;justify-content:space-between"><div class="muted-note">Avg Completion</div><div id="stat-avg">0%</div></div>
+            <div style="display:flex;justify-content:space-between"><div class="muted-note">Overdue</div><div id="stat-overdue">0</div></div>
+          </div>
+
+          <div style="margin-top:18px">
+            <h4 style="margin:0 0 10px 0">Recoverable Deletes</h4>
+            <button id="btnRecoverList" class="btn" type="button">View Recoverable</button>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div id="modal" aria-hidden="true">
+    <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="dialog-header">
+        <h3 id="modalTitle">Add Task</h3>
+        <button class="close-x iconbtn" id="btnClose" aria-label="Close dialog" type="button">✕</button>
+      </div>
+
+      <div class="dialog-body">
+        <form id="taskForm" autocomplete="off" novalidate>
+          <input type="hidden" id="taskId">
+          <div class="field">
+            <input id="title" class="input" type="text" placeholder=" " required aria-required="true">
+            <label class="floating-label" for="title">Task Name</label>
+          </div>
+
+          <div style="display:flex;gap:12px;">
+            <div class="field" style="flex:1;">
+              <input id="dueDate" class="input" type="text" placeholder=" " required aria-required="true" aria-label="Due date">
+              <label class="floating-label" for="dueDate">Due Date</label>
+            </div>
+            <div class="field" style="width:140px;">
+              <select id="type" class="input" aria-label="Type">
+                <option value="assignment">Assignment</option>
+                <option value="study">Study</option>
+                <option value="project">Project</option>
+                <option value="exam">Exam</option>
+              </select>
+              <label class="floating-label" for="type">Type</label>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:12px;margin-top:8px;">
+            <div class="field" style="flex:1;">
+              <select id="priority" class="input" aria-label="Priority">
+                <option value="low">Low</option>
+                <option value="medium" selected>Medium</option>
+                <option value="high">High</option>
+              </select>
+              <label class="floating-label" for="priority">Priority</label>
+            </div>
+            <div class="field" style="width:140px;">
+              <input id="progress" class="input" type="number" min="0" max="100" value="0" placeholder=" " aria-label="Completion percentage">
+              <label class="floating-label" for="progress">Completion %</label>
+            </div>
+          </div>
+
+          <div class="field">
+            <textarea id="desc" class="input" placeholder=" " aria-label="Description"></textarea>
+            <label class="floating-label" for="desc">Description</label>
+          </div>
+
+          <div style="display:flex;align-items:center;gap:8px;margin-top:12px;">
+            <input class="round" id="completed" type="checkbox">
+            <label for="completed" style="font-weight:700;color:#0f172a;">Mark completed</label>
+          </div>
+        </form>
+      </div>
+
+      <div class="dialog-footer">
+        <button id="btnCancel" class="btn secondary" type="button">Cancel</button>
+        <button id="saveBtn" class="btn primary" type="button">Save Task</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- Stats modal -->
+  <div id="statsModal" aria-hidden="true" style="display:none;position:fixed;inset:0;align-items:center;justify-content:center;z-index:10070;background:rgba(8,12,16,0.18)">
+    <div class="dialog stats" role="dialog" aria-modal="true" aria-labelledby="statsModalTitle" style="width:min(620px,90%)">
+      <div class="dialog-header" style="align-items:flex-start;gap:12px;">
+        <div style="display:flex;flex-direction:column;gap:6px;min-width:0">
+          <h3 id="statsModalTitle" style="margin:0">Tasks</h3>
+          <div style="font-size:13px;color:var(--gray-600)">Quick view of tasks — switch filters below</div>
+        </div>
+
+        <!-- segmented control inside modal header -->
+        <div style="margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+          <div id="stats-seg" class="seg seg--compact seg--brand" data-tab="all" aria-label="Task filters" role="tablist" tabindex="0" style="margin:0">
+            <div class="thumb" aria-hidden="true"></div>
+            <button data-tab="all" class="active" role="tab" aria-selected="true" aria-label="All">All</button>
+            <button data-tab="pending" role="tab" aria-selected="false" aria-label="Pending">Pending</button>
+            <button data-tab="completed" role="tab" aria-selected="false" aria-label="Completed">Completed</button>
+            <button data-tab="high" role="tab" aria-selected="false" aria-label="High Priority">High</button>
+          </div>
+
+          <!-- small sort control moved into header, right aligned -->
+          <div class="controls-row" style="align-items:center">
+            <label class="sort-label" for="statsSortSel" style="margin-right:6px">Sort</label>
+            <select id="statsSortSel" class="btn" style="padding:6px 8px;border-radius:8px;border:1px solid var(--gray-200);background:var(--white)">
+              <option value="due">Due date</option>
+              <option value="priority">Priority</option>
+              <option value="created">Newest</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="dialog-body" style="max-height:60vh;overflow:auto;padding-top:10px;">
+        <div id="statsList"></div>
+      </div>
+      <!-- footer intentionally hidden; use top-right close or header close-x -->
+    </div>
+  </div>
+
+  <!-- Discard Confirmation Modal -->
+  <div id="discardModal" aria-hidden="true" style="display:none;position:fixed;inset:0;align-items:center;justify-content:center;z-index:10050;background:rgba(8,12,16,0.3)">
+    <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="discardTitle" style="width:420px;">
+      <div class="dialog-header">
+        <h3 id="discardTitle">Discard changes?</h3>
+        <button class="close-x iconbtn" id="discardClose" aria-label="Close" type="button">✕</button>
+      </div>
+      <div class="dialog-body">
+        <p>Are you sure you want to discard your changes? You can undo this action from the toast shortly.</p>
+      </div>
+      <div class="dialog-footer" style="justify-content:space-between">
+        <div></div>
+        <div style="display:flex;gap:8px">
+          <button id="discardKeep" class="btn secondary" type="button">Keep Editing</button>
+          <button id="discardConfirm" class="btn" type="button">Discard</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal (styled) -->
+  <div id="deleteModal" aria-hidden="true" style="display:none;position:fixed;inset:0;align-items:center;justify-content:center;z-index:10050;background:rgba(8,12,16,0.3)">
+    <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="deleteTitle" style="width:420px;">
+      <div class="dialog-header">
+        <h3 id="deleteTitle">Delete task?</h3>
+        <button class="close-x iconbtn" id="deleteClose" aria-label="Close" type="button">✕</button>
+      </div>
+      <div class="dialog-body">
+        <p id="deleteBody">Are you sure you want to delete this task? You can undo this action for a short time.</p>
+      </div>
+      <div class="dialog-footer" style="justify-content:space-between">
+        <div></div>
+        <div style="display:flex;gap:8px">
+          <button id="deleteCancel" class="btn secondary" type="button">Cancel</button>
+          <button id="deleteConfirm" class="btn" type="button">Delete</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recoverable deletes modal (list pending deletes, allow restore) -->
+  <div id="recoverModal" aria-hidden="true" style="display:none;position:fixed;inset:0;align-items:center;justify-content:center;z-index:10050;background:rgba(8,12,16,0.3)">
+    <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="recoverTitle" style="width:min(760px,96%);max-height:80vh;overflow:auto;">
+      <div class="dialog-header">
+        <h3 id="recoverTitle">Recently deleted (recoverable)</h3>
+        <button class="close-x iconbtn" id="recoverClose" aria-label="Close" type="button">✕</button>
+      </div>
+      <div class="dialog-body">
+        <div id="recoverList"></div>
+      </div>
+      <div class="dialog-footer">
+        <button id="recoverCloseBtn" class="btn secondary" type="button">Close</button>
+      </div>
+    </div>
+  </div>
+
+{% endblock %}
+
+{% block scripts %}
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+  <script>
+    /* Planner JS: connected to Flask API
+       - uses fetch() to call your /api/tasks endpoints
+       - sends CSRF token from cookie in header X-CSRF-Token for mutating requests
+       - keeps UI behavior from your previous script (segmented control, sort pill, modals)
+    */
+
+    // ---------- helpers ----------
+    function readCookie(name) {
+      const m = document.cookie.match('(?:^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+      return m ? decodeURIComponent(m[1]) : null;
+    }
+
+    function csrfHeader() {
+      const token = readCookie('csrf_token');
+      return token ? { 'X-CSRF-Token': token } : {};
+    }
+
+    function showToast(msg, type='info', opts = {}) {
+      const container = document.getElementById('toast-container');
+      const el = document.createElement('div');
+      el.className = 'toast';
+      el.setAttribute('role','status');
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(-6px)';
+      el.style.transition = 'opacity .18s ease, transform .18s ease';
+      el.style.background = type === 'error' ? '#ef4444' : (type === 'success' ? '#16a34a' : getComputedStyle(document.documentElement).getPropertyValue('--planner-accent') || '#0ea5e9');
+
+      const text = document.createElement('div');
+      text.textContent = msg;
+      text.style.flex = '1';
+      el.appendChild(text);
+
+      if (opts.actionText && typeof opts.actionCallback === 'function') {
+        const actionBtn = document.createElement('button');
+        actionBtn.textContent = opts.actionText;
+        actionBtn.setAttribute('type','button');
+        actionBtn.className = 'btn';
+        actionBtn.style.background = 'transparent';
+        actionBtn.style.border = '1px solid rgba(255,255,255,0.22)';
+        actionBtn.style.color = '#fff';
+        actionBtn.style.padding = '6px 8px';
+        actionBtn.style.borderRadius = '6px';
+        actionBtn.addEventListener('click', () => {
+          if (el._timeout) clearTimeout(el._timeout);
+          opts.actionCallback();
+          el.remove();
+        });
+        el.appendChild(actionBtn);
+      }
+
+      container.appendChild(el);
+      requestAnimationFrame(()=>{ el.style.opacity='1'; el.style.transform='translateY(0)'; });
+
+      const duration = opts.duration || 3500;
+      el._timeout = setTimeout(()=> {
+        el.style.opacity='0'; el.style.transform='translateY(-6px)';
+        setTimeout(()=> el.remove(), 220);
+      }, duration);
+    }
+
+    // ---------- state & elements ----------
+    const listEl = document.getElementById('taskList');
+    const dlEl = document.getElementById('deadlines');
+    const statPending = document.getElementById('stat-pending');
+    const statCompleted = document.getElementById('stat-completed');
+    const statHigh = document.getElementById('stat-high');
+    const statWeek = document.getElementById('stat-week');
+    const searchEl = document.getElementById('search');
+    const seg = document.getElementById('seg');
+    const sortSel = document.getElementById('sortSel');
+
+    const modal = document.getElementById('modal');
+    const btnAdd = document.getElementById('btnAdd');
+    const btnExportPlanner = document.getElementById('btnExportPlanner');
+    const btnClose = document.getElementById('btnClose');
+    const btnCancel = document.getElementById('btnCancel');
+    const btnSave = document.getElementById('saveBtn');
+    const toggleViewBtn = document.getElementById('toggleView');
+
+    const form = document.getElementById('taskForm');
+    const fldId = document.getElementById('taskId');
+    const fldTitle = document.getElementById('title');
+    const fldDueDate = document.getElementById('dueDate');
+    const fldType = document.getElementById('type');
+    const fldPriority = document.getElementById('priority');
+    const fldProgress = document.getElementById('progress');
+    const fldDesc = document.getElementById('desc');
+    const fldCompleted = document.getElementById('completed');
+    const modalTitle = document.getElementById('modalTitle');
+
+    const deleteModal = document.getElementById('deleteModal');
+    const deleteConfirm = document.getElementById('deleteConfirm');
+    const deleteCancel = document.getElementById('deleteCancel');
+    const deleteClose = document.getElementById('deleteClose');
+    let _pendingDeleteTargetId = null;
+
+    const recoverModal = document.getElementById('recoverModal');
+    const recoverList = document.getElementById('recoverList');
+    const recoverClose = document.getElementById('recoverClose');
+    const recoverCloseBtn = document.getElementById('recoverCloseBtn');
+    const btnRecoverList = document.getElementById('btnRecoverList');
+
+    const statsModal = document.getElementById('statsModal');
+    const statsList = document.getElementById('statsList');
+
+    let currentTab = 'all';
+    let currentSearch = '';
+    let timelineView = true;
+
+    // flatpickr init
+    function initPlannerDatepicker(){
+      const el = document.getElementById('dueDate');
+      if(!el) return;
+      if(window._plannerFP && window._plannerFP.destroy) window._plannerFP.destroy();
+      window._plannerFP = flatpickr(el, {
+        enableTime:false,
+        dateFormat:"Y-m-d",
+        defaultDate:null,
+        allowInput: true,
+        onChange(){ tuneFloatingLabels(); }
+      });
+      el.addEventListener('focus', ()=> { try { window._plannerFP.open(); } catch(e){} });
+    }
+
+    function fmtDate(dateStr){ if(!dateStr) return 'TBD'; try { const d=new Date(dateStr); return d.toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'}); } catch(e){ return dateStr; } }
+    function daysDiff(dateStr){ if(!dateStr) return 9999; const today=new Date(); today.setHours(0,0,0,0); const d=new Date(dateStr); d.setHours(0,0,0,0); return Math.round((d - today)/(1000*60*60*24)); }
+
+    function typeBadge(t){ const map={assignment:'tag',study:'tag',project:'tag secondary',exam:'tag'}; return `<span class=\"${map[t]||'tag'}\">${t}</span>`; }
+    function prBadge(p){ const map={high:'priority-high',medium:'priority-medium',low:'priority-low'}; return `<span class=\"badge ${map[p]||''}\">${p}</span>`; }
+
+    // ---------- API wrappers ----------
+    async function apiGetTasks({ search='', filter='all', sort='due' } = {}) {
+      const q = new URLSearchParams();
+      if (search) q.set('search', search);
+      if (filter) q.set('filter', filter);
+      if (sort) q.set('sort', sort);
+      const res = await fetch(`/api/tasks?${q.toString()}`, { credentials: 'same-origin' });
+      if (!res.ok) throw new Error('Failed fetching tasks');
+      return res.json();
+    }
+
+    async function apiCreateTask(payload) {
+      const res = await fetch('/api/tasks', {
+        method: 'POST',
+        headers: Object.assign({'Content-Type':'application/json'}, csrfHeader()),
+        credentials: 'same-origin',
+        body: JSON.stringify(payload)
+      });
+      return res;
+    }
+
+    async function apiUpdateTask(id, payload) {
+      const res = await fetch(`/api/tasks/${id}`, {
+        method: 'PATCH',
+        headers: Object.assign({'Content-Type':'application/json'}, csrfHeader()),
+        credentials: 'same-origin',
+        body: JSON.stringify(payload)
+      });
+      return res;
+    }
+
+    async function apiDeleteTask(id) {
+      const res = await fetch(`/api/tasks/${id}`, {
+        method: 'DELETE',
+        headers: csrfHeader(),
+        credentials: 'same-origin'
+      });
+      return res;
+    }
+
+    async function apiRestoreTask(taskId) {
+      const res = await fetch(`/api/tasks/${taskId}/restore`, {
+        method: 'POST',
+        headers: csrfHeader(),
+        credentials: 'same-origin'
+      });
+      return res;
+    }
+
+    async function apiListPendingDeletes() {
+      const res = await fetch('/api/pending_deletes', { credentials: 'same-origin' });
+      if (!res.ok) throw new Error('Failed listing recoverables');
+      return res.json();
+    }
+
+    async function apiRestorePendingId(pendingId) {
+      const res = await fetch(`/api/pending_deletes/${pendingId}/restore`, {
+        method: 'POST',
+        headers: csrfHeader(),
+        credentials: 'same-origin'
+      });
+      return res;
+    }
+
+    async function apiGetStats() {
+      const res = await fetch('/api/tasks/stats', { credentials: 'same-origin' });
+      if (!res.ok) throw new Error('Failed fetching stats');
+      return res.json();
+    }
+
+    // ---------- render ----------
+    function renderTasks(tasks){
+      listEl.innerHTML = '';
+      if (!tasks.length){ listEl.innerHTML = `<div style="padding:18px;color:var(--muted)">No tasks found.</div>`; return; }
+
+      if (timelineView){
+        const wrap = document.createElement('div'); wrap.className = 'timeline';
+        tasks.forEach(t => {
+          const diff = daysDiff(t.dueDate);
+          const el = document.createElement('div'); el.className = 'timeline-entry';
+          el.innerHTML = `
+            <div class="timeline-dot" title="${fmtDate(t.dueDate)}"></div>
+            <div style="flex:1">
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <div style="font-weight:800">${t.title}</div>
+                <div style="font-size:13px;color:var(--gray-600)">${fmtDate(t.dueDate)}</div>
+              </div>
+              <div style="margin-top:6px;color:var(--gray-600)">${(t.desc||'')}</div>
+              <div style="margin-top:8px">${typeBadge(t.type)} ${prBadge(t.priority)}</div>
+            </div>
+            <div style="width:120px;text-align:right">
+              <div style="margin-bottom:8px">${t.progress}%</div>
+              <div style="margin-bottom:6px"><button class="iconbtn edit" data-id="${t.id}" type="button" aria-label="Edit">Edit</button> <button class="iconbtn delete" data-id="${t.id}" type="button" aria-label="Delete">Delete</button></div>
+            </div>
+          `;
+          wrap.appendChild(el);
+        });
+        listEl.appendChild(wrap);
+        return;
+      }
+
+      for (const t of tasks){
+        const diff = daysDiff(t.dueDate);
+        const overdue = diff < 0;
+        const statusHtml = t.completed ? `<div style=\"color:var(--planner-accent);font-weight:700\">Completed</div>` : `<div style=\"color:var(--gray-600);font-weight:700\">In Progress</div>`;
+        const item = document.createElement('div'); item.className = 'task-card';
+        item.innerHTML = `
+          <div class="task-left">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+              <div style="display:flex;align-items:center;gap:10px">
+                <input type="checkbox" class="round toggle-complete" data-id="${t.id}" ${t.completed ? 'checked' : ''}/>
+                <div style="min-width:0">
+                  <div class="task-title">${t.title}</div>
+                  <div class="task-desc">${t.desc || ''}</div>
+                </div>
+              </div>
+              <div style="text-align:right">${statusHtml}</div>
+            </div>
+
+            <div style="margin-top:8px;display:flex;gap:10px;align-items:center;color:var(--gray-600);font-size:13px">
+              <div>📅 Due: ${fmtDate(t.dueDate)}</div>
+              ${overdue ? `<div style=\"color:var(--accent-2);font-weight:700\">${Math.abs(diff)}d overdue</div>` : `<div class=\"muted-note\">${diff}d left</div>`}
+            </div>
+
+            <div style="margin-top:8px">${typeBadge(t.type)} ${prBadge(t.priority)}</div>
+          </div>
+
+          <div class="task-right">
+            <div class="progress-wrap" aria-hidden="true">
+              <div class="progress"><div class="fill" style="width:${t.progress}%"></div></div>
+              <div style="font-size:13px;color:var(--gray-600);margin-top:6px">${t.progress}% complete</div>
+            </div>
+
+            <div class="actions-row">
+              <button class="iconbtn edit" data-id="${t.id}" aria-label="Edit" type="button">Edit</button>
+              <button class="iconbtn delete" data-id="${t.id}" aria-label="Delete" type="button">Delete</button>
+            </div>
+          </div>
+        `;
+        listEl.appendChild(item);
+      }
+    }
+
+    async function renderDeadlinesAndStats() {
+      try {
+        const stats = await apiGetStats();
+        statPending.textContent = stats.pending;
+        statCompleted.textContent = stats.completed;
+        statHigh.textContent = stats.high;
+        statWeek.textContent = stats.dueWeek;
+        document.getElementById('stat-avg').textContent = stats.avg + '%';
+        document.getElementById('stat-overdue').textContent = stats.overdue;
+      } catch (e) {
+        console.warn('stats fetch failed', e);
+      }
+
+      // deadlines: reuse tasks endpoint to show next 5 upcoming
+      try {
+        const all = await apiGetTasks({ search: '', filter: 'pending', sort: 'due' });
+        const today = new Date(); today.setHours(0,0,0,0);
+        const in7 = new Date(today.getTime() + 7*24*60*60*1000);
+        const upcoming = all.filter(t => t.dueDate).filter(t => {
+          const d = new Date(t.dueDate);
+          d.setHours(0,0,0,0);
+          return d >= today && d <= in7;
+        }).slice(0,5);
+
+        if (!upcoming.length){ dlEl.innerHTML = `<div class="muted-note">No upcoming deadlines.</div>`; }
+        else {
+          dlEl.innerHTML = upcoming.map(t=>{
+            const diff = daysDiff(t.dueDate);
+            const chip = diff < 0 ? `<span class="badge priority-high">${Math.abs(diff)}d overdue</span>` : `<span class="badge" style="background:#fff7ed;color:#c2410c;border-color:#fed7aa">${diff}d</span>`;
+            return `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+              <div style="max-width:60%">
+                <div style="font-weight:800">${t.title}</div>
+                <div style="color:var(--gray-600);font-size:13px">${(t.desc||'').slice(0,60)}${(t.desc||'').length>60?'...':''}</div>
+                <div style="margin-top:6px">${prBadge(t.priority)}</div>
+              </div>
+              <div style="text-align:right">
+                ${chip}
+                <div style="height:6px;width:110px;margin-top:8px;border-radius:9999px;overflow:hidden;background:#f2f4f5"><div style="height:100%;background:var(--planner-accent);width:${t.progress}%;border-radius:9999px"></div></div>
+              </div>
+            </div>`;
+          }).join('');
+        }
+      } catch (e) {
+        dlEl.innerHTML = `<div class="muted-note">Unable to load deadlines.</div>`;
+      }
+    }
+
+    // ---------- CRUD wiring ----------
+    async function load() {
+      try {
+        const sortBy = sortSel.value || 'due';
+        const tasks = await apiGetTasks({ search: currentSearch, filter: currentTab, sort: sortBy });
+        renderTasks(tasks);
+        await renderDeadlinesAndStats();
+      } catch (e) {
+        listEl.innerHTML = `<div style="padding:18px;color:var(--muted)">Failed loading tasks.</div>`;
+        console.error(e);
+      }
+    }
+
+    // Save logic
+    async function saveTask(){
+      const isEdit = Boolean(fldId.value);
+      const payload = {
+        title: fldTitle.value.trim(),
+        desc: fldDesc.value.trim(),
+        type: fldType.value,
+        priority: fldPriority.value,
+        dueDate: fldDueDate.value || (window._plannerFP && window._plannerFP.input && window._plannerFP.input.value) || '',
+        progress: Number(fldProgress.value || 0),
+        completed: !!fldCompleted.checked
+      };
+      if (!payload.title || !payload.dueDate){ announceFormError('Please provide a title and due date.', fldTitle); showToast('Title and due date are required','error'); return; }
+
+      try {
+        if (isEdit) {
+          const id = fldId.value;
+          const r = await apiUpdateTask(id, payload);
+          if (!r.ok) {
+            const j = await r.json().catch(()=>({}));
+            throw new Error(j.message || 'Update failed');
+          }
+          showToast('Task updated','success');
+        } else {
+          const r = await apiCreateTask(payload);
+          if (!r.ok) {
+            const j = await r.json().catch(()=>({}));
+            throw new Error(j.message || 'Create failed');
+          }
+          showToast('Task added','success');
+        }
+        hideModal();
+        await load();
+      } catch (err) {
+        showToast(err.message || 'Save failed','error');
+      }
+    }
+
+    // Delete scheduling & Undo
+    async function scheduleDelete(taskId){
+      try {
+        const res = await apiDeleteTask(taskId);
+        if (!res.ok) {
+          const j = await res.json().catch(()=>({}));
+          throw new Error(j.message || 'Delete failed');
+        }
+        const body = await res.json().catch(()=>({}));
+        // server returns undo_seconds and pending_id
+        const sec = body.undo_seconds || 30;
+        const pid = body.pending_id;
+        showToast(`Deleted — you can undo`, 'info', {
+          actionText: 'Undo',
+          actionCallback: async () => {
+            // Try restore by task endpoint first
+            try {
+              const r = await apiRestoreTask(taskId);
+              if (r.ok) { showToast('Restore successful','success'); load(); return; }
+            } catch(e){}
+            // Fallback restore by pending id
+            if (pid) {
+              try {
+                const rr = await apiRestorePendingId(pid);
+                if (rr.ok) { showToast('Restore successful','success'); load(); return; }
+              } catch(e){}
+            }
+            showToast('Undo failed or expired','error');
+          },
+          duration: (sec * 1000) + 400
+        });
+        load();
+      } catch (err) {
+        showToast(err.message || 'Delete failed','error');
+      }
+    }
+
+    // ---------- recover modal ----------
+    async function openRecoverModal(){
+      try {
+        const list = await apiListPendingDeletes();
+        if (!list || !list.length) {
+          recoverList.innerHTML = '<div style="padding:18px;color:var(--muted)">No recoverable deletes.</div>';
+        } else {
+          recoverList.innerHTML = list.map(p => {
+            const snap = p.snapshot || {};
+            const title = snap.title || `Task ${p.task_id}`;
+            const remaining = p.expires_at ? Math.max(0, Math.round((new Date(p.expires_at) - Date.now())/1000)) : '';
+            return `<div style="border-radius:8px;padding:10px;margin-bottom:8px;border:1px solid var(--gray-200);display:flex;justify-content:space-between;align-items:center">
+              <div style="max-width:70%">
+                <div style="font-weight:800">${title}</div>
+                <div style="color:var(--gray-600);font-size:13px">${(snap.desc||'')}</div>
+                <div style="margin-top:6px">${snap.priority? '<span class=\"badge\">' + snap.priority + '</span>' : ''}</div>
+              </div>
+              <div style="text-align:right">
+                <div style="color:var(--gray-600);font-size:13px">Recoverable for ${remaining}s</div>
+                <div style="margin-top:8px"><button class="btn btn-restore" data-pending-id="${p.id}" data-task-id="${p.task_id}">Restore</button></div>
+              </div>
+            </div>`;
+          }).join('');
+        }
+
+        setTimeout(()=> {
+          const btns = recoverList.querySelectorAll('button[data-pending-id]');
+          btns.forEach(b => b.addEventListener('click', async (ev) => {
+            const pid = b.getAttribute('data-pending-id');
+            try {
+              const res = await apiRestorePendingId(pid);
+              if (res.ok) { showToast('Restore successful','success'); openRecoverModal(); load(); }
+              else {
+                const j = await res.json().catch(()=>({}));
+                showToast(j.message || 'Restore failed','error');
+              }
+            } catch (e) {
+              showToast('Restore failed','error');
+            }
+          }));
+        }, 40);
+
+        if (recoverModal){ recoverModal.style.display = 'flex'; recoverModal.setAttribute('aria-hidden','false'); }
+      } catch (e) {
+        showToast('Failed to load recoverables','error');
+      }
+    }
+
+    // ---------- form helpers & modal ----------
+    function announceFormError(message, fieldEl) {
+      let live = document.getElementById('aria-form-live');
+      if (!live) {
+        live = document.createElement('div');
+        live.id = 'aria-form-live';
+        live.setAttribute('aria-live','assertive');
+        live.setAttribute('aria-atomic','true');
+        live.className = 'sr-only';
+        document.body.appendChild(live);
+      }
+      live.textContent = message;
+      if (fieldEl && typeof fieldEl.focus === 'function') fieldEl.focus();
+    }
+
+    function trapFocus(modalEl) {
+      const focusableSelectors = 'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])';
+      let focusable = Array.from(modalEl.querySelectorAll(focusableSelectors));
+      focusable = focusable.filter(el => {
+        try { return !!(el.offsetWidth || el.offsetHeight || el.getClientRects().length); } catch(e) { return false; }
+      });
+      if (!focusable.length) return { release: ()=>{} };
+
+      let first = focusable[0];
+      let last = focusable[focusable.length - 1];
+
+      function handleKey(e) {
+        if (e.key !== 'Tab') return;
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+      document.addEventListener('keydown', handleKey);
+      return {
+        release() {
+          document.removeEventListener('keydown', handleKey);
+        }
+      };
+    }
+
+    let _modalFocusTrap = null;
+    let _lastFocusedEl = null;
+
+    function showModal(isEdit=false, task=null){
+      _lastFocusedEl = document.activeElement;
+      modal.style.display = 'flex';
+      modal.setAttribute('aria-hidden','false');
+      document.body.classList.add('modal-open');
+      _modalFocusTrap = trapFocus(document.querySelector('#modal .dialog'));
+
+      if (isEdit && task){
+        modalTitle.textContent = 'Edit Task';
+        fldId.value = task.id;
+        const dstr = task.dueDate ? String(task.dueDate).slice(0,10) : null;
+        if (window._plannerFP && dstr) {
+          try { window._plannerFP.setDate(dstr, true, "Y-m-d"); } catch(e) { fldDueDate.value = (task.dueDate||'').slice(0,10); }
+        } else fldDueDate.value = (task.dueDate||'').slice(0,10);
+        fldType.value = task.type;
+        fldPriority.value = task.priority;
+        fldProgress.value = task.progress;
+        fldDesc.value = task.desc || '';
+        fldCompleted.checked = !!task.completed;
+      } else {
+        modalTitle.textContent = 'Add Task';
+        fldId.value = '';
+        form.reset();
+        fldProgress.value = 0;
+        if (window._plannerFP) window._plannerFP.clear();
+      }
+      tuneFloatingLabels();
+      setTimeout(()=> {
+        const first = document.querySelector('#modal .dialog').querySelector('input,select,textarea,button,[tabindex]:not([tabindex="-1"])');
+        if (first) first.focus();
+      }, 50);
+    }
+    function hideModal(){ 
+      modal.style.display = 'none'; 
+      modal.setAttribute('aria-hidden','true'); 
+      document.body.classList.remove('modal-open'); 
+      if (_modalFocusTrap && _modalFocusTrap.release) _modalFocusTrap.release();
+      if (_lastFocusedEl && _lastFocusedEl.focus) _lastFocusedEl.focus();
+    }
+
+    function tuneFloatingLabels(){
+      document.querySelectorAll('.field').forEach(f=>{
+        const input = f.querySelector('.input') || f.querySelector('input') || f.querySelector('textarea') || f.querySelector('select');
+        if (!input) return;
+        if ((input.value && String(input.value).trim().length) || (input.selectedOptions && input.selectedOptions.length && input.selectedOptions[0].value !== '')) f.classList.add('has-value'); else f.classList.remove('has-value');
+      });
+    }
+    document.addEventListener('input', tuneFloatingLabels);
+    document.addEventListener('change', tuneFloatingLabels);
+
+    // ---------- segmented control ----------
+    function updateThumb() {
+      if (!seg) return;
+      const thumbEl = seg.querySelector('.thumb');
+      const active = seg.querySelector('button.active') || seg.querySelector('button[data-tab="all"]');
+      if (!active || !thumbEl) return;
+
+      const segRect = seg.getBoundingClientRect();
+      const btnRect = active.getBoundingClientRect();
+
+      // account for segment container padding on the left (10px from CSS)
+      // calculate left offset relative to seg and include a small inset to visually align the thumb
+      const left = Math.round(btnRect.left - segRect.left - 6);
+      // make thumb width slightly larger than button to create breathing room
+      const width = Math.round(btnRect.width + 12); // 12px extra for spacing/visual padding
+
+      thumbEl.style.width = width + 'px';
+      thumbEl.style.transform = `translateX(${left}px)`;
+      thumbEl.style.opacity = '1';
+
+      seg.querySelectorAll('button').forEach(b => {
+        if (b !== active) {
+          b.style.color = '#065f46';
+          b.style.zIndex = 2;
+        }
+      });
+      active.style.color = '#fff';
+      active.style.zIndex = 3;
+    }
+
+    if (seg) {
+      seg.addEventListener('click', (e) => {
+        const btn = e.target.closest('button[data-tab]');
+        if (!btn) return;
+        [...seg.querySelectorAll('button')].forEach(b => { b.classList.remove('active'); b.setAttribute('aria-selected','false'); });
+        btn.classList.add('active');
+        btn.setAttribute('aria-selected','true');
+        currentTab = btn.dataset.tab;
+        updateThumb();
+        load();
+      });
+
+      seg.addEventListener('keydown', (e) => {
+        const buttons = Array.from(seg.querySelectorAll('button[data-tab]'));
+        const activeIndex = buttons.findIndex(b => b.classList.contains('active'));
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown'){
+          e.preventDefault();
+          const next = buttons[(activeIndex + 1) % buttons.length];
+          next.focus();
+          next.click();
+        } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp'){
+          e.preventDefault();
+          const prev = buttons[(activeIndex - 1 + buttons.length) % buttons.length];
+          prev.focus();
+          prev.click();
+        }
+      });
+    }
+
+    // ---------- event wiring ----------
+    if (toggleViewBtn) {
+      toggleViewBtn.addEventListener('click', () => {
+        timelineView = !timelineView;
+        toggleViewBtn.textContent = timelineView ? 'Timeline View' : 'Board View';
+        toggleViewBtn.setAttribute('aria-pressed', String(timelineView));
+        load();
+      });
+    }
+    if (btnAdd) btnAdd.addEventListener('click', ()=> showModal(false,null));
+    if (btnExportPlanner) btnExportPlanner.addEventListener('click', ()=> {
+      // trigger download from server
+      window.location.href = '/api/tasks/export';
+    });
+
+    // modal handlers
+    function isFormDirty(){
+      try{
+        if (!form) return false;
+        if (fldTitle.value.trim()) return true;
+        if (fldDueDate.value) return true;
+        if (fldType.value && fldType.value !== 'assignment') return true;
+        if (fldPriority.value && fldPriority.value !== 'medium') return true;
+        if (Number(fldProgress.value||0) !== 0) return true;
+        if (fldDesc.value && fldDesc.value.trim()) return true;
+        if (fldCompleted.checked) return true;
+      }catch(e){ }
+      return false;
+    }
+
+    function handleCancel(){
+      if (isFormDirty()){
+        showDiscardModal().then(res => {
+          if (res) { hideModal(); showToast('Changes discarded', 'info', { actionText: 'Undo', actionCallback: ()=>{ showModal(false); showToast('Restore (no data)'); }, duration: 6000 }); }
+        });
+        return;
+      }
+      hideModal();
+    }
+
+    if (btnClose) btnClose.addEventListener('click', (e)=>{ e.preventDefault(); handleCancel(); });
+    if (btnCancel) btnCancel.addEventListener('click', handleCancel);
+    form.addEventListener('submit', (e) => { e.preventDefault(); saveTask(); });
+    if (btnSave) btnSave.addEventListener('click', ()=> { form.requestSubmit(); });
+
+    // list interactions (edit/delete/update complete)
+    listEl.addEventListener('click', (e) => {
+      const editBtn = e.target.closest('.edit');
+      const delBtn = e.target.closest('.delete');
+
+      if (editBtn){
+        const id = editBtn.dataset.id;
+        // fetch single task & open modal for edit
+        fetch(`/api/tasks/${id}`, { credentials: 'same-origin' }).then(r=>r.json()).then(t=>{
+          if (t) showModal(true, t);
+        }).catch(()=> showToast('Failed to load task','error'));
+      }
+
+      if (delBtn){
+        const id = delBtn.dataset.id;
+        _pendingDeleteTargetId = id;
+        if (deleteModal) { deleteModal.style.display = 'flex'; deleteModal.setAttribute('aria-hidden','false'); }
+      }
+    });
+
+    // delete modal handlers
+    if (deleteConfirm) deleteConfirm.addEventListener('click', ()=>{
+      if (!_pendingDeleteTargetId) return;
+      scheduleDelete(_pendingDeleteTargetId);
+      _pendingDeleteTargetId = null;
+      if (deleteModal){ deleteModal.style.display='none'; deleteModal.setAttribute('aria-hidden','true'); }
+    });
+    if (deleteCancel) deleteCancel.addEventListener('click', ()=>{ _pendingDeleteTargetId = null; if (deleteModal){ deleteModal.style.display='none'; deleteModal.setAttribute('aria-hidden','true'); } });
+    if (deleteClose) deleteClose.addEventListener('click', ()=>{ _pendingDeleteTargetId = null; if (deleteModal){ deleteModal.style.display='none'; deleteModal.setAttribute('aria-hidden','true'); } });
+
+    // toggle complete
+    listEl.addEventListener('change', async (e) => {
+      const toggle = e.target.closest('.toggle-complete');
+      if (toggle){
+        const id = toggle.dataset.id;
+        try {
+          const r = await apiUpdateTask(id, { completed: !!toggle.checked });
+          if (!r.ok) { showToast('Update failed','error'); }
+          else { showToast('Task updated','success'); load(); }
+        } catch (err) {
+          showToast('Update failed','error');
+        }
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        const shown = modal.getAttribute('aria-hidden') === 'false';
+        if (shown) hideModal();
+      }
+    });
+
+    // stats modal wiring
+    function renderStatsList(tasks){
+      if (!tasks || !tasks.length){ statsList.innerHTML = '<div style="padding:18px;color:var(--muted)">No tasks found.</div>'; return; }
+      statsList.innerHTML = tasks.map(t=>{
+        const due = fmtDate(t.dueDate);
+        return `<div style="border-radius:8px;padding:10px;margin-bottom:8px;border:1px solid var(--gray-200);display:flex;justify-content:space-between;align-items:center">
+          <div style="max-width:70%">
+            <div style="font-weight:800">${t.title}</div>
+            <div style="color:var(--gray-600);font-size:13px">${(t.desc||'')}</div>
+            <div style="margin-top:6px">${prBadge(t.priority)} ${typeBadge(t.type)}</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-weight:700">${due}</div>
+            <div style="margin-top:6px">${t.progress}%</div>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    async function openStatsModal(filter, title){
+      try {
+        const all = await apiGetTasks({ filter: filter === 'all' ? 'all' : filter, sort: 'due' });
+        // refine for week filter
+        let tasks = all.slice();
+        if (filter === 'week'){
+          const today = new Date(); today.setHours(0,0,0,0);
+          const in7 = new Date(today.getTime() + 7*24*60*60*1000);
+          tasks = tasks.filter(t=>{ const d=new Date(t.dueDate); d.setHours(0,0,0,0); return d>=today && d<=in7 && !t.completed; });
+        }
+        document.getElementById('statsModalTitle').textContent = title || 'Tasks';
+        renderStatsList(tasks);
+        const m = document.getElementById('statsModal');
+        if (m){ m.style.display = 'flex'; m.setAttribute('aria-hidden','false'); }
+      } catch (e) {
+        showToast('Unable to open stats','error');
+      }
+    }
+    function closeStatsModal(){ const m=document.getElementById('statsModal'); if (m){ m.style.display='none'; m.setAttribute('aria-hidden','true'); } }
+
+    const topPending = document.getElementById('top-pending'); if (topPending) topPending.addEventListener('click', ()=> openStatsModal('pending','Pending Tasks'));
+    const topCompleted = document.getElementById('top-completed'); if (topCompleted) topCompleted.addEventListener('click', ()=> openStatsModal('completed','Completed Tasks'));
+    const topHigh = document.getElementById('top-high'); if (topHigh) topHigh.addEventListener('click', ()=> openStatsModal('high','High Priority'));
+    const topWeek = document.getElementById('top-week'); if (topWeek) topWeek.addEventListener('click', ()=> openStatsModal('week','Due This Week'));
+    const statsCloseBtn = document.getElementById('statsCloseBtn'); if (statsCloseBtn) statsCloseBtn.addEventListener('click', closeStatsModal);
+
+    // discard modal
+    const discardModal = document.getElementById('discardModal');
+    const discardConfirm = document.getElementById('discardConfirm');
+    const discardKeep = document.getElementById('discardKeep');
+    const discardClose = document.getElementById('discardClose');
+    let _lastSnapshot = null;
+
+    function snapshotForm(){
+      return {
+        title: fldTitle.value,
+        dueDate: fldDueDate.value,
+        type: fldType.value,
+        priority: fldPriority.value,
+        progress: fldProgress.value,
+        desc: fldDesc.value,
+        completed: fldCompleted.checked
+      };
+    }
+    function restoreSnapshot(snap){
+      if (!snap) return;
+      fldTitle.value = snap.title || '';
+      if (window._plannerFP && snap.dueDate) window._plannerFP.setDate(snap.dueDate, true, 'Y-m-d'); else fldDueDate.value = snap.dueDate || '';
+      fldType.value = snap.type || 'assignment';
+      fldPriority.value = snap.priority || 'medium';
+      fldProgress.value = snap.progress || 0;
+      fldDesc.value = snap.desc || '';
+      fldCompleted.checked = !!snap.completed;
+      tuneFloatingLabels();
+    }
+
+    function showDiscardModal(){
+      if (!discardModal) return Promise.resolve(false);
+      discardModal.style.display = 'flex'; discardModal.setAttribute('aria-hidden','false');
+      return new Promise((resolve)=>{
+        function cleanup(){
+          discardModal.style.display = 'none'; discardModal.setAttribute('aria-hidden','true');
+          discardConfirm.removeEventListener('click', onConfirm);
+          discardKeep.removeEventListener('click', onKeep);
+          discardClose.removeEventListener('click', onKeep);
+        }
+        function onConfirm(){ cleanup(); resolve(true); }
+        function onKeep(){ cleanup(); resolve(false); }
+        discardConfirm.addEventListener('click', onConfirm);
+        discardKeep.addEventListener('click', onKeep);
+        discardClose.addEventListener('click', onKeep);
+      });
+    }
+
+    window.handleCancel = async function(){
+      if (!isFormDirty()) { hideModal(); return; }
+      _lastSnapshot = snapshotForm();
+      const res = await showDiscardModal();
+      if (res){
+        hideModal();
+        showToast('Changes discarded', 'info', { actionText: 'Undo', actionCallback: ()=>{ showModal(false); restoreSnapshot(_lastSnapshot); showToast('Restore successful','success'); }, duration: 6000 });
+      }
+    };
+
+    // wire close X to cancel behavior (extra safety)
+    const closeX = document.getElementById('btnClose');
+    if (closeX){ closeX.addEventListener('click', (e)=>{ e.preventDefault(); window.handleCancel(); }); }
+
+    // recover modal wiring
+    if (btnRecoverList) btnRecoverList.addEventListener('click', openRecoverModal);
+    if (recoverClose) recoverClose.addEventListener('click', ()=>{ if (recoverModal){ recoverModal.style.display='none'; recoverModal.setAttribute('aria-hidden','true'); } });
+    if (recoverCloseBtn) recoverCloseBtn.addEventListener('click', ()=>{ if (recoverModal){ recoverModal.style.display='none'; recoverModal.setAttribute('aria-hidden','true'); } });
+
+    // ---------- sort UI enhancements ----------
+    function initSortUI(){
+      const sortDisplay = document.getElementById('sortDisplay');
+      const sortLabel = document.getElementById('sortLabel');
+      if (!sortSel || !sortDisplay || !sortLabel) return;
+      function setSortUI(text){
+        sortDisplay.classList.add('fade-out');
+        sortLabel.classList.add('fade-out');
+        setTimeout(() => {
+          sortDisplay.textContent = text;
+          sortSel.setAttribute('data-label', text);
+          sortLabel.textContent = `Sort • ${text}`;
+          sortDisplay.classList.remove('fade-out');
+          sortDisplay.classList.add('fade-in');
+          sortLabel.classList.remove('fade-out');
+          sortLabel.classList.add('fade-in');
+          setTimeout(() => {
+            sortDisplay.classList.remove('fade-in');
+            sortLabel.classList.remove('fade-in');
+          }, 220);
+        }, 90);
+      }
+      const initialText = sortSel.options[sortSel.selectedIndex].textContent || 'Sort';
+      setSortUI(initialText);
+      sortSel.addEventListener('change', function(){
+        const chosenText = this.options[this.selectedIndex].textContent || this.value;
+        setSortUI(chosenText);
+        setTimeout(() => load(), 120);
+      });
+      sortSel.addEventListener('input', function(){
+        const chosenText = this.options[this.selectedIndex].textContent || this.value;
+        setSortUI(chosenText);
+        setTimeout(() => load(), 120);
+      });
+    }
+
+    // ---------- boot ----------
+    document.addEventListener('DOMContentLoaded', ()=>{
+      initPlannerDatepicker();
+      tuneFloatingLabels();
+      load();
+
+      // initial thumb placement
+      setTimeout(updateThumb, 60);
+      window.addEventListener('resize', ()=> setTimeout(updateThumb, 80));
+
+      document.getElementById('modal').addEventListener('click', (e)=> { if (e.target === document.getElementById('modal')) hideModal(); });
+
+      searchEl.addEventListener('input', () => { currentSearch = searchEl.value.trim(); load(); });
+
+      document.querySelectorAll('select').forEach(s => { s.style.position = 'relative'; s.style.zIndex = 'auto'; });
+
+      // show toast if recoverable deletes exist on load
+      apiListPendingDeletes().then(list => {
+        if (list && list.length) {
+          showToast(`${list.length} recently deleted item(s) can still be restored`, 'info', { actionText: 'View', actionCallback: ()=> openRecoverModal(), duration: 10000 });
+        }
+      }).catch(()=>{});
+
+      initSortUI();
+    });
+  </script>
+{% endblock %}

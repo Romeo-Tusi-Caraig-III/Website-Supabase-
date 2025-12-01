@@ -1,0 +1,492 @@
+{% extends "user/index.html" %}
+
+{% block head %}
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Calendar - Student Hub</title>
+<style>
+  :root{
+    --cal-max-width: 980px;
+    --cal-col-gap: 24px;
+    --cal-card-radius: 12px;
+    --cal-shadow: 0 12px 40px rgba(12,18,30,0.06);
+    --accent:#16a34a;
+    --emerald-600:#059669;
+    --gray-50:#f9fafb;
+    --gray-200:#e5e7eb;
+    --gray-300:#d1d5db;
+    --gray-600:#4b5563;
+    --gray-700:#374151;
+    --white:#ffffff;
+
+    /* full-height variable (tune this) */
+    --cal-full-height: 84vh; /* controls how tall the calendar expands (viewport-aware) */
+  }
+
+  .cal-page { width:100%; box-sizing:border-box; }
+
+  .cal-header {
+    background:var(--white);
+    border:1px solid var(--gray-200);
+    border-radius:14px;
+    padding:20px 22px;
+    margin-bottom:20px;
+    box-shadow:var(--cal-shadow);
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:12px;
+  }
+  .cal-header .greeting h1 { margin:0; font-size:26px; font-weight:900; color:#0f172a; }
+  .cal-header .greeting p { margin:8px 0 0; color:var(--gray-600); font-weight:600; font-size:0.95rem; }
+  .cal-header .meta { display:flex; gap:12px; align-items:center; }
+  .cal-header .add-link { color:var(--accent); font-weight:800; text-decoration:none; cursor:pointer; }
+  .cal-header .tasks-badge { display:inline-flex; align-items:center; gap:8px; padding:6px 10px; border-radius:999px; border:1px solid rgba(6,95,70,0.08); color:var(--emerald-600); font-weight:700; }
+
+  /* two-column layout: left is main (calendar) and right is sidebar */
+  .cal-grid {
+    display:grid;
+    grid-template-columns: minmax(640px, var(--cal-max-width)) 320px;
+    gap:var(--cal-col-gap);
+    align-items:start;
+    width:100%;
+  }
+  @media (max-width:980px) { .cal-grid { grid-template-columns: 1fr; } }
+
+  .cal-card {
+    border-radius:var(--cal-card-radius);
+    border:1px solid var(--gray-200);
+    background:var(--white);
+    box-shadow:var(--cal-shadow);
+    overflow:visible;
+    position:relative;
+
+    /* FULL-WIDTH: fill available column width */
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+
+    /* Let the card expand vertically so calendar content doesn't get clipped.
+       The calendar-grid below will size relative to viewport. */
+  }
+
+  .cal-card .card-header { padding:12px 16px; border-bottom:1px solid var(--gray-200); font-weight:700; }
+  .days-header { display:grid; grid-template-columns:repeat(7,1fr); gap:10px; padding:12px 14px; color:var(--gray-600); font-weight:700; font-size:13px; text-align:center; }
+
+  /* NO SCROLL: calendar grid will expand to a viewport-based height (no internal scrolling) */
+  .calendar-grid {
+    display:grid;
+    grid-template-columns:repeat(7,1fr);
+    gap:12px;
+    padding:14px;
+    box-sizing:border-box;
+
+    /* Expand to a large viewport-relative height so the card grows instead of scrolling */
+    height: var(--cal-full-height);
+    min-height: var(--cal-full-height);
+
+    /* ensure content is visible and not cropped */
+    overflow: visible;
+    background: transparent;
+  }
+
+  .cell {
+    /* cells will size naturally inside the expanded grid */
+    min-height:100px;
+    padding:10px;
+    border-radius:10px;
+    border:1px solid var(--gray-200);
+    background:var(--white);
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    box-sizing: border-box;
+  }
+  .cell.other { background:#fbfbfb; opacity:.98; color:var(--gray-500); }
+  .cell.today { outline:2px solid rgba(5,150,105,0.12); }
+  .cell.selected { outline:3px solid rgba(22,163,74,0.18); box-shadow: inset 0 0 0 1px rgba(16,185,129,0.04); }
+
+  .date-number { font-weight:700; color:var(--gray-700); font-size:0.95rem; }
+  .event-stack { display:flex; flex-direction:column; gap:8px; margin-top:auto; }
+  .pill { padding:6px 8px; border-radius:10px; font-weight:700; font-size:12px; background:rgba(16,185,129,0.12); color:#047857; border:1px solid rgba(16,185,129,0.06); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; cursor:pointer; }
+
+  /* Task-specific pill styling */
+  .pill.task {
+    background: rgba(99,102,241,0.08);
+    color: #4f46e5;
+    border: 1px solid rgba(99,102,241,0.06);
+  }
+  .upc-badge.task {
+    background: #f3f4ff;
+    color: #4f46e5;
+    border-color: rgba(99,102,241,0.08);
+  }
+
+  .side-card { border-radius:var(--cal-card-radius); border:1px solid var(--gray-200); background:var(--white); box-shadow:var(--cal-shadow); overflow:hidden; }
+  .side-card .card-header { padding:12px 14px; border-bottom:1px solid rgba(0,0,0,0.04); font-weight:700; }
+  .side-card .card-body { padding:12px; }
+
+  /* Modal */
+  .modal-backdrop { display:none; position:fixed; inset:0; background:rgba(8,12,16,0.36); align-items:center; justify-content:center; z-index:1400; padding:18px; }
+  .modal-backdrop.show { display:flex; }
+  .modal { width:min(760px,96%); background:var(--white); border-radius:12px; border:1px solid var(--gray-200); box-shadow:0 24px 60px rgba(12,18,30,0.24); overflow:hidden; display:flex; flex-direction:column; }
+  .modal-header { padding:14px 18px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(0,0,0,0.03); }
+  .modal-body { padding:16px 18px; overflow:auto; }
+  .modal-footer { padding:12px 18px; display:flex; justify-content:flex-end; gap:8px; border-top:1px solid rgba(0,0,0,0.03); background:linear-gradient(180deg,rgba(255,255,255,0), rgba(255,255,255,1)); }
+
+  .input, textarea, select { width:100%; box-sizing:border-box; padding:10px; border-radius:8px; border:1px solid var(--gray-200); background:#fff; font-size:14px; color:#0f172a; }
+  textarea { min-height:80px; resize:vertical; padding-top:10px; }
+
+  .btn { padding:8px 12px; border-radius:8px; cursor:pointer; border:0; }
+  .btn.secondary { background:#fff; border:1px solid var(--gray-300); color:var(--gray-700); }
+  .btn.primary { background:var(--accent); color:#fff; font-weight:800; }
+  .btn.danger { background:#fef2f2; border:1px solid #fecaca; color:#b91c1c; font-weight:700; }
+
+  /* Responsive adjustments: on small screens make the calendar slightly shorter so it fits */
+  @media (max-width:980px){
+    .calendar-grid { gap:8px; padding:10px; }
+    .cell { min-height:90px; padding:8px; }
+
+    /* allow calendar to be fluid on small screens */
+    .cal-card {
+      width: 100%;
+      min-width: 0;
+      max-width: 100%;
+    }
+    /* reduce full-height on narrow screens to fit viewport comfortably */
+    :root { --cal-full-height: 68vh; }
+    .modal { width:94%; }
+  }
+
+  @media (max-width:600px){
+    :root { --cal-full-height: 56vh; }
+    .calendar-grid { gap:8px; padding:8px; }
+  }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="cal-page {% if not can_edit %}read-only{% endif %}">
+  <div class="cal-header" role="banner" aria-label="Calendar header">
+    <div class="greeting">
+      <h1 id="calendarGreeting">Calendar</h1>
+      <p id="calendarSub"><span id="dueCount">0</span> tasks due today • <span id="weekCount">0</span> upcoming this week.</p>
+    </div>
+
+    <div class="meta" role="region" aria-label="Header actions">
+      <div class="tasks-badge"><span id="todayLabel">Today</span> <strong style="padding-left:6px" id="todayCount">0</strong></div>
+    </div>
+  </div>
+
+  <div class="cal-grid" role="main">
+    <div style="display:flex;justify-content:flex-start">
+      <div class="cal-card" id="calendarCard" aria-label="Calendar card">
+        <div class="card-header"><div id="monthYear">Month Year</div></div>
+        <div class="days-header" aria-hidden="true"><div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div></div>
+        <div class="calendar-grid" id="calendarGrid" aria-live="polite" aria-label="Calendar grid"></div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="side-card" role="region" aria-label="Events for selected date">
+        <div class="card-header">Events for <span id="selectedDateLabel">—</span></div>
+        <div class="card-body" id="eventsList">No date selected.</div>
+      </div>
+
+      <div class="side-card" role="region" aria-label="Upcoming events">
+        <div class="card-header">Upcoming This Week</div>
+        <div class="card-body" id="upcomingList">No upcoming events this week.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal (details only in read-only; editable when can_edit true) -->
+<div id="eventModal" class="modal-backdrop" aria-hidden="true">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-header">
+      <h3 id="modalTitle">Event details</h3>
+      <button id="modalClose" class="btn secondary" aria-label="Close dialog">✕</button>
+    </div>
+    <div class="modal-body">
+      <form id="eventForm">
+        <input type="hidden" id="modalId" />
+        <label style="display:block;margin-bottom:8px;font-weight:700">Title</label>
+        <input id="modalTitleInput" class="input" type="text" placeholder="Event title" required readonly />
+        <div style="display:flex;gap:10px;margin-top:12px">
+          <div style="flex:1">
+            <label style="display:block;margin-bottom:8px;font-weight:700">Start</label>
+            <input id="modalStart" class="input" type="datetime-local" required readonly />
+          </div>
+          <div style="width:200px">
+            <label style="display:block;margin-bottom:8px;font-weight:700">Type</label>
+            <select id="modalType" class="input" disabled>
+              <option value="">Select</option><option value="class">Class</option><option value="lab">Lab</option><option value="study">Study</option><option value="assignment">Assignment</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:12px">
+          <div style="flex:1">
+            <label style="display:block;margin-bottom:8px;font-weight:700">Location</label>
+            <input id="modalLocation" class="input" type="text" placeholder="Location (optional)" readonly />
+          </div>
+          <div style="width:200px">
+            <label style="display:block;margin-bottom:8px;font-weight:700">Status</label>
+            <select id="modalStatus" class="input" disabled><option>Not Started</option><option>In Progress</option><option>Completed</option></select>
+          </div>
+        </div>
+        <label style="display:block;margin-top:12px;margin-bottom:8px;font-weight:700">Description</label>
+        <textarea id="modalDescription" placeholder="Purpose / notes (optional)" readonly></textarea>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <!-- Buttons: edit/save/delete are only visible when server passes can_edit -->
+      <button id="modalDelete" class="btn danger" style="display:none">Delete</button>
+      <button id="modalCancel" class="btn secondary">Close</button>
+      <button id="modalSave" class="btn primary" style="display:none">Save</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function(){
+  const API_BASE = '/api/meetings';
+  const TASKS_BASE = '/api/tasks';
+  const calendarGrid = document.getElementById('calendarGrid');
+  const monthYear = document.getElementById('monthYear');
+  const eventsList = document.getElementById('eventsList');
+  const upcomingList = document.getElementById('upcomingList');
+  const selectedDateLabel = document.getElementById('selectedDateLabel');
+  const addHeader = document.getElementById('addHeader');
+
+  // server-provided flag: can_edit
+  const CAN_EDIT = {{ 'true' if can_edit else 'false' }};
+
+  // modal elements
+  const modalBackdrop = document.getElementById('eventModal');
+  const modalForm = document.getElementById('eventForm');
+  const modalId = document.getElementById('modalId');
+  const modalTitleInput = document.getElementById('modalTitleInput');
+  const modalStart = document.getElementById('modalStart');
+  const modalType = document.getElementById('modalType');
+  const modalLocation = document.getElementById('modalLocation');
+  const modalDescription = document.getElementById('modalDescription');
+  const modalStatus = document.getElementById('modalStatus');
+  const modalClose = document.getElementById('modalClose');
+  const modalCancel = document.getElementById('modalCancel');
+  const modalSave = document.getElementById('modalSave');
+  const modalDelete = document.getElementById('modalDelete');
+
+  let currentDate = new Date();
+  let selectedDate = null;
+  let meetings = [];
+
+  function pad(n){ return String(n).padStart(2,'0'); }
+  function toInputLocal(d){ if(!d) return ''; const date = new Date(d); return date.getFullYear() + '-' + pad(date.getMonth()+1) + '-' + pad(date.getDate()) + 'T' + pad(date.getHours()) + ':' + pad(date.getMinutes()); }
+  function isSameDate(a,b){ return a && b && a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate(); }
+
+  // helper: try common task datetime fields and normalize to ISO or null
+  function parseTaskDatetime(task) {
+    const candidates = ['due', 'due_datetime', 'due_at', 'dueDate', 'due_date', 'deadline'];
+    for (const k of candidates) {
+      if (task[k]) {
+        const val = String(task[k]);
+        if (/^\d{4}-\d{2}-\d{2}$/.test(val)) {
+          const parts = val.split('-').map(Number);
+          const d = new Date(parts[0], parts[1]-1, parts[2], 9, 0, 0);
+          return d.toISOString();
+        }
+        const d = new Date(val);
+        if (!isNaN(d)) return d.toISOString();
+      }
+    }
+    return null;
+  }
+
+  async function loadMeetings(){
+    try{
+      const [mRes, tRes] = await Promise.all([
+        fetch(API_BASE, { credentials:'same-origin' }),
+        fetch(TASKS_BASE, { credentials:'same-origin' })
+      ]);
+
+      let meetRows = [];
+      let taskRows = [];
+
+      if (mRes.ok) meetRows = await mRes.json(); else console.warn('meetings fetch failed', mRes.status);
+      if (tRes.ok) taskRows = await tRes.json(); else console.warn('tasks fetch failed', tRes.status);
+
+      const mappedMeetings = (meetRows || []).map(r => ({
+        id: r.id,
+        title: r.title,
+        datetime: r.datetime || r.start || null,
+        location: r.location || r.meetLink || '',
+        type: r.type || '',
+        purpose: r.purpose || '',
+        status: r.status || 'Not Started',
+        source: 'meeting'
+      }));
+
+      const mappedTasks = (taskRows || []).map(t => {
+        const dt = parseTaskDatetime(t) || (t.due || null);
+        const type = t.type || 'assignment';
+        const title = t.title || t.name || t.summary || 'Task';
+        return {
+          id: 'task_' + (t.id !== undefined ? t.id : (Date.now() + Math.floor(Math.random()*1000))),
+          title: title,
+          datetime: dt,
+          location: t.location || t.course || '',
+          type: type,
+          purpose: t.notes || t.description || '',
+          status: t.status || (t.completed ? 'Completed' : 'pending'),
+          source: 'task',
+        };
+      });
+
+      meetings = mappedMeetings.concat(mappedTasks);
+
+    } catch (e) {
+      console.warn('loadMeetings failed', e);
+      const now = new Date(); now.setHours(9,0,0,0);
+      meetings = [
+        { id:'seed_1', title:'Calculus Lecture', datetime: now.toISOString(), location:'Room 204', type:'class', purpose:'', status:'Not Started', source:'meeting' },
+        { id:'task_seed_1', title:'Read Chapter 4', datetime: now.toISOString(), location:'', type:'assignment', purpose:'Read before Tuesday', status:'Not Started', source:'task' }
+      ];
+    }
+
+    // sort by datetime (push nulls to the end)
+    meetings.sort((a,b)=>{
+      const ad = a.datetime ? new Date(a.datetime).getTime() : Number.MAX_SAFE_INTEGER;
+      const bd = b.datetime ? new Date(b.datetime).getTime() : Number.MAX_SAFE_INTEGER;
+      return ad - bd;
+    });
+
+    renderCalendar(); renderUpcoming();
+    if (selectedDate) setTimeout(renderEventsForSelected, 40);
+  }
+
+  function renderCalendar(){
+    calendarGrid.innerHTML = '';
+    const y = currentDate.getFullYear(); const m = currentDate.getMonth();
+    monthYear.textContent = currentDate.toLocaleString(undefined, { month: 'long' }) + ' ' + y;
+    const first = new Date(y,m,1); const startDay = first.getDay(); const daysInMonth = new Date(y,m+1,0).getDate();
+    for(let i=0;i<startDay;i++){ const ph = document.createElement('div'); ph.className='cell other'; ph.innerHTML='&nbsp;'; calendarGrid.appendChild(ph); }
+    for(let d=1; d<=daysInMonth; d++){
+      const cellDate = new Date(y,m,d);
+      const cell = document.createElement('div'); cell.className='cell';
+      const dn = document.createElement('div'); dn.className='date-number'; dn.textContent = d; cell.appendChild(dn);
+      if(isSameDate(cellDate,new Date())) cell.classList.add('today');
+      if(selectedDate && isSameDate(cellDate,selectedDate)) cell.classList.add('selected');
+      const dayEvents = meetings.filter(ev => ev.datetime && isSameDate(new Date(ev.datetime), cellDate));
+      const stack = document.createElement('div'); stack.className='event-stack';
+      dayEvents.slice(0,2).forEach(ev => {
+        const pill = document.createElement('div');
+        pill.className = 'pill' + (ev.source === 'task' ? ' task' : '');
+        pill.textContent = ev.title.length>22? ev.title.substring(0,22)+'…' : ev.title;
+        pill.addEventListener('click', function(e){ e.stopPropagation(); openViewModal(ev.id); });
+        stack.appendChild(pill);
+      });
+      if(dayEvents.length>2){ const more = document.createElement('div'); more.className='pill'; more.textContent = `+${dayEvents.length-2} more`; stack.appendChild(more); }
+      cell.appendChild(stack);
+      cell.addEventListener('click', function(){ selectedDate = new Date(cellDate.getFullYear(), cellDate.getMonth(), cellDate.getDate()); renderCalendar(); renderEventsForSelected(); });
+      calendarGrid.appendChild(cell);
+    }
+  }
+
+  function renderEventsForSelected(){
+    eventsList.innerHTML = '';
+    selectedDateLabel.textContent = selectedDate ? selectedDate.toLocaleDateString(undefined,{month:'long',day:'numeric'}) : '—';
+    if(!selectedDate){ eventsList.textContent = 'No date selected.'; return; }
+    const dayEvents = meetings.filter(ev => ev.datetime && isSameDate(new Date(ev.datetime), selectedDate)).sort((a,b)=> new Date(a.datetime)-new Date(b.datetime));
+    if(dayEvents.length===0){ eventsList.textContent='No events for this date.'; return; }
+    dayEvents.forEach(ev=>{
+      const item = document.createElement('div'); item.className='event-item'; item.style.marginBottom='12px';
+      const header = document.createElement('div'); header.style.display='flex'; header.style.justifyContent='space-between';
+      const title = document.createElement('div'); title.textContent = ev.title; title.style.fontWeight='700';
+      const time = document.createElement('div'); time.textContent = ev.datetime? new Date(ev.datetime).toLocaleTimeString([], { hour:'numeric', minute:'2-digit' }) : ''; time.style.color='var(--emerald-600)'; time.style.fontWeight='700';
+      header.appendChild(title); header.appendChild(time); item.appendChild(header);
+      if(ev.location){ const l = document.createElement('div'); l.style.marginTop='8px'; l.style.color='var(--gray-600)'; l.textContent = ev.location; item.appendChild(l); }
+      if(ev.purpose){ const p = document.createElement('div'); p.style.marginTop='8px'; p.style.color='var(--gray-600)'; p.textContent = ev.purpose; item.appendChild(p); }
+      item.addEventListener('click', ()=> openViewModal(ev.id)); eventsList.appendChild(item);
+    });
+  }
+
+  function renderUpcoming(){ upcomingList.innerHTML=''; const today = new Date(); today.setHours(0,0,0,0); const weekTo = new Date(today); weekTo.setDate(today.getDate()+7);
+    const upc = meetings.filter(ev => ev.datetime && (new Date(ev.datetime).setHours(0,0,0,0) >= today.getTime()) && (new Date(ev.datetime).setHours(0,0,0,0) <= weekTo.getTime())).sort((a,b)=> new Date(a.datetime) - new Date(b.datetime));
+    if(!upc.length){ upcomingList.textContent='No upcoming events this week.'; return; }
+    upc.forEach(ev=>{ const r=document.createElement('div'); r.style.display='flex'; r.style.gap='12px'; r.style.padding='8px 0'; r.style.alignItems='center';
+      const badge=document.createElement('div');
+      badge.className = 'upc-badge' + (ev.source === 'task' ? ' task' : '');
+      badge.style.padding='6px 8px'; badge.style.borderRadius='8px'; badge.style.border='1px solid var(--gray-200)'; badge.style.background='var(--gray-50)'; badge.textContent = ev.type || '';
+      const date=document.createElement('div'); date.style.fontWeight='700'; date.textContent= ev.datetime? new Date(ev.datetime).toLocaleDateString(undefined,{month:'short',day:'numeric'}) : '';
+      const title=document.createElement('div'); title.style.fontWeight='700'; title.textContent = ev.title;
+      const meta=document.createElement('div'); meta.style.marginLeft='auto'; meta.style.color='var(--gray-600)'; meta.textContent = ev.datetime? new Date(ev.datetime).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'}) : '';
+      r.appendChild(badge); r.appendChild(date); r.appendChild(title); r.appendChild(meta); r.addEventListener('click', ()=> openViewModal(ev.id)); upcomingList.appendChild(r);
+    });
+  }
+
+  // create/update/delete functions only active when CAN_EDIT true
+  async function createMeeting(payload){ if(!CAN_EDIT) return Promise.reject(new Error('Read-only')); try{ const res = await fetch(API_BASE, { method:'POST', credentials:'same-origin', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload) }); if(!res.ok) throw new Error('create failed'); const data = await res.json(); const created = data.meeting || null; if(created){ meetings.push({ id: created.id, title: created.title, datetime: created.datetime, location: created.location, type: created.type, purpose: created.purpose, status: created.status, source:'meeting' }); } }catch(e){ console.warn('createMeeting failed; adding locally', e); const local = { id: 'local_' + Date.now(), title: payload.title, datetime: payload.datetime, location: payload.location||'', type: payload.type||'', purpose: payload.purpose||'', status: payload.status||'Not Started', source:'meeting' }; meetings.push(local); } renderCalendar(); renderEventsForSelected(); renderUpcoming(); }
+
+  async function updateMeeting(id, updates){ if(!CAN_EDIT) return Promise.reject(new Error('Read-only')); try{ const res = await fetch(API_BASE + '/' + id, { method:'PATCH', credentials:'same-origin', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(updates) }); if(!res.ok) throw new Error('update failed'); const idx = meetings.findIndex(m=> String(m.id)===String(id)); if(idx!==-1){ Object.assign(meetings[idx], updates); if(updates.datetime) meetings[idx].datetime = updates.datetime; } }catch(e){ console.warn('updateMeeting failed; updating locally', e); const idx = meetings.findIndex(m=> String(m.id)===String(id)); if(idx!==-1) Object.assign(meetings[idx], updates); } renderCalendar(); renderEventsForSelected(); renderUpcoming(); }
+
+  async function deleteMeeting(id){ if(!CAN_EDIT) return Promise.reject(new Error('Read-only')); try{ const res = await fetch(API_BASE + '/' + id, { method:'DELETE', credentials:'same-origin' }); if(!res.ok) throw new Error('delete failed'); meetings = meetings.filter(m => String(m.id) !== String(id)); }catch(e){ console.warn('deleteMeeting failed; removing locally', e); meetings = meetings.filter(m => String(m.id) !== String(id)); } renderCalendar(); renderEventsForSelected(); renderUpcoming(); }
+
+  function showModal(){ modalBackdrop.classList.add('show'); modalBackdrop.setAttribute('aria-hidden','false'); setTimeout(()=> modalTitleInput.focus(),80); }
+  function hideModal(){ modalBackdrop.classList.remove('show'); modalBackdrop.setAttribute('aria-hidden','true'); clearModal(); }
+  function clearModal(){ modalId.value=''; modalForm.reset(); modalDelete.style.display='none'; modalSave.style.display='none'; }
+
+  function openCreateModal(prefillDate){ if(!CAN_EDIT) return; clearModal(); document.getElementById('modalTitle').textContent='Add Event'; modalStart.value = prefillDate ? toInputLocal(prefillDate) : ''; modalStatus.value='Not Started'; modalDelete.style.display='none'; modalSave.style.display='inline-block'; showModal(); }
+
+  function openViewModal(id){
+    const ev = meetings.find(m=> String(m.id)===String(id));
+    if(!ev) return;
+    const isTask = ev.source === 'task';
+    document.getElementById('modalTitle').textContent = isTask ? 'Task details' : (CAN_EDIT ? 'Edit Event' : 'Event details');
+    modalId.value = ev.id;
+    modalTitleInput.value = ev.title || '';
+    modalStart.value = ev.datetime ? toInputLocal(ev.datetime) : '';
+    modalType.value = ev.type || '';
+    modalLocation.value = ev.location || '';
+    modalDescription.value = ev.purpose || '';
+    modalStatus.value = ev.status || 'Not Started';
+
+    // Make fields read-only if it's a task OR if overall page is read-only.
+    const readOnly = isTask || !CAN_EDIT;
+    modalTitleInput.readOnly = readOnly;
+    modalStart.readOnly = readOnly;
+    modalType.disabled = readOnly;
+    modalLocation.readOnly = readOnly;
+    modalDescription.readOnly = readOnly;
+    modalStatus.disabled = readOnly;
+
+    // Show/hide action buttons: only show Save/Delete when CAN_EDIT and it's NOT a task
+    modalDelete.style.display = (CAN_EDIT && !isTask) ? 'inline-block' : 'none';
+    modalSave.style.display = (CAN_EDIT && !isTask) ? 'inline-block' : 'none';
+
+    showModal();
+  }
+
+  modalClose.addEventListener('click', hideModal); modalCancel.addEventListener('click', hideModal); modalBackdrop.addEventListener('click', (e)=> { if(e.target===modalBackdrop) hideModal(); });
+
+  if(CAN_EDIT){ modalSave.addEventListener('click', async (e)=>{ e.preventDefault(); const id = modalId.value; const title = modalTitleInput.value.trim(); const startVal = modalStart.value; const type = modalType.value; const location = modalLocation.value.trim(); const purpose = modalDescription.value.trim(); const status = modalStatus.value; if(!title || !startVal || !type){ alert('Please fill Title, Start, and Type.'); return; } if(!id){ const payload = { title, datetime: new Date(startVal).toISOString(), location, type, purpose, status, attendees: [] }; await createMeeting(payload); } else { const updates = { title, type, purpose, location, status, datetime: new Date(startVal).toISOString() }; await updateMeeting(id, updates); } hideModal(); });
+    modalDelete.addEventListener('click', async (e)=>{ if(!confirm('Delete this event?')) return; const id = modalId.value; if(!id) return; await deleteMeeting(id); hideModal(); });
+  } else {
+    // ensure add button does nothing
+    if(addHeader) addHeader.addEventListener('click', (e)=>{ e.preventDefault(); });
+  }
+
+  if(addHeader){ addHeader.addEventListener('click', (e)=>{ e.preventDefault(); const d = selectedDate ? new Date(selectedDate) : new Date(); d.setHours(9,0,0,0); openCreateModal(d); }); }
+
+  window.addEventProgrammatic = async function(ev){ if(!ev||!ev.title||!ev.start) { console.warn('Missing title/start'); return null; } const payload = { title: ev.title, datetime: (ev.start instanceof Date)? ev.start.toISOString() : new Date(ev.start).toISOString(), location: ev.location||'', type: ev.type||'', purpose: ev.purpose||'', attendees: ev.attendees||[] }; await createMeeting(payload); return true; };
+
+  window.gotoMonth = function(y, monthIndex){ if(typeof y !== 'number' || typeof monthIndex !== 'number') return; currentDate = new Date(y, monthIndex, 1); renderCalendar(); };
+  window.viewEventsForDate = function(dateISO){ try{ const d = (dateISO instanceof Date)? dateISO : new Date(dateISO); if(isNaN(d)){ console.warn('Invalid date'); return; } selectedDate = new Date(d.getFullYear(), d.getMonth(), d.getDate()); renderCalendar(); setTimeout(renderEventsForSelected,60); }catch(err){ console.warn(err); } };
+  window.reloadCalendarMeetings = loadMeetings;
+  loadMeetings();
+  document.addEventListener('keydown', (e)=>{ if(e.key==='ArrowLeft'){ currentDate.setMonth(currentDate.getMonth()-1); renderCalendar(); } if(e.key==='ArrowRight'){ currentDate.setMonth(currentDate.getMonth()+1); renderCalendar(); } });
+})();
+</script>
+{% endblock %}
