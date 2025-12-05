@@ -80,7 +80,7 @@ label{display:block;margin-bottom:6px;font-size:13px;font-weight:700;color:#0632
 
 /* right icon / toggle */
 .right-icon{position:absolute; right:8px; top:50%; transform:translateY(-50%); z-index:4; display:flex;align-items:center;justify-content:center}
-/* make eye icons stroke-only & controlled by currentColor (accent) */
+ /* make eye icons stroke-only & controlled by currentColor (accent) */
 .toggle-btn{background:transparent;border:0;padding:6px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
 .toggle-btn svg{width:18px;height:18px;display:block; stroke:var(--accent); fill:none; stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round}
 .toggle-btn:focus{outline:2px solid rgba(5,150,105,0.12);outline-offset:2px}
@@ -226,8 +226,7 @@ label{display:block;margin-bottom:6px;font-size:13px;font-weight:700;color:#0632
         <input id="password" name="password" class="input" type="password" placeholder="Create a strong password" required aria-describedby="passwordError passwordStrengthDesc" autocomplete="new-password">
         <div class="right-icon">
           <button type="button" id="togglePassword" class="toggle-btn" aria-label="Show password" title="Show/hide password">
-            <!-- outlined eye (initial) -->
-            <svg id="eyeIcon" viewBox="0 0 24 24" aria-hidden="true">
+            <svg id="eyeIcon" viewBox="0 0 24 24" aria-hidden="true" stroke="currentColor" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
               <path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
               <circle cx="12" cy="12" r="3"></circle>
             </svg>
@@ -254,7 +253,7 @@ label{display:block;margin-bottom:6px;font-size:13px;font-weight:700;color:#0632
         <input id="confirmPassword" name="confirmPassword" class="input" type="password" placeholder="Confirm your password" required autocomplete="new-password">
         <div class="right-icon">
           <button type="button" id="toggleConfirmPassword" class="toggle-btn" aria-label="Show confirm password" title="Show/hide confirm password">
-            <svg id="eyeConfirmIcon" viewBox="0 0 24 24" aria-hidden="true">
+            <svg id="eyeConfirmIcon" viewBox="0 0 24 24" aria-hidden="true" stroke="currentColor" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
               <path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
               <circle cx="12" cy="12" r="3"></circle>
             </svg>
@@ -307,187 +306,174 @@ label{display:block;margin-bottom:6px;font-size:13px;font-weight:700;color:#0632
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function(){
-  // elements
-  const firstName = document.getElementById('firstName');
-  const middleName = document.getElementById('middleName');
-  const lastName = document.getElementById('lastName');
-  const suffix = document.getElementById('suffix');
-  const displayNamePreview = document.getElementById('displayNamePreview');
+document.addEventListener('DOMContentLoaded', () => {
+  // safe query helper
+  const $ = id => document.getElementById(id);
 
-  const toggleExtrasBtn = document.getElementById('toggleExtrasBtn');
-  const nameExtras = document.getElementById('nameExtras');
+  // elements (may be null if templating changed structure)
+  const firstName = $('firstName');
+  const middleName = $('middleName');
+  const lastName = $('lastName');
+  const suffix = $('suffix');
+  const displayNamePreview = $('displayNamePreview');
 
-  const email = document.getElementById('email');
-  const password = document.getElementById('password');
-  const confirmPassword = document.getElementById('confirmPassword');
+  const toggleExtrasBtn = $('toggleExtrasBtn');
+  const nameExtras = $('nameExtras');
 
-  const sendCodeBtn = document.getElementById('sendCodeBtn');
-  const createBtn = document.getElementById('createBtn');
+  const email = $('email');
+  const password = $('password');
+  const confirmPassword = $('confirmPassword');
 
-  const togglePassword = document.getElementById('togglePassword');
-  const eyeIcon = document.getElementById('eyeIcon');
-  const toggleConfirmPassword = document.getElementById('toggleConfirmPassword');
-  const eyeConfirmIcon = document.getElementById('eyeConfirmIcon');
+  const sendCodeBtn = $('sendCodeBtn');
+  const createBtn = $('createBtn');
 
-  const passwordError = document.getElementById('passwordError');
-  const confirmPasswordError = document.getElementById('confirmPasswordError');
-  const firstNameError = document.getElementById('firstNameError');
-  const lastNameError = document.getElementById('lastNameError');
-  const emailError = document.getElementById('emailError');
+  const togglePassword = $('togglePassword');
+  const eyeIcon = $('eyeIcon');
+  const toggleConfirmPassword = $('toggleConfirmPassword');
+  const eyeConfirmIcon = $('eyeConfirmIcon');
 
-  const strengthFill = document.getElementById('strengthFill');
-  const strengthText = document.getElementById('strengthText');
+  const passwordError = $('passwordError');
+  const confirmPasswordError = $('confirmPasswordError');
+  const firstNameError = $('firstNameError');
+  const lastNameError = $('lastNameError');
+  const emailError = $('emailError');
+
+  const strengthFill = $('strengthFill');
+  const strengthText = $('strengthText');
 
   // modal
-  const twoFAModal = document.getElementById('twoFAModal');
-  const modalVerify = document.getElementById('modalVerify');
-  const modalCancel = document.getElementById('modalCancel');
-  const modalResend = document.getElementById('modalResend');
-  const otpInput = document.getElementById('otpInput');
-  const otpTimer = document.getElementById('otpTimer');
-  const modalMsg = document.getElementById('modalMsg');
+  const twoFAModal = $('twoFAModal');
+  const modalVerify = $('modalVerify');
+  const modalCancel = $('modalCancel');
+  const modalResend = $('modalResend');
+  const otpInput = $('otpInput');
+  const otpTimer = $('otpTimer');
+  const modalMsg = $('modalMsg');
 
-  // helper: compose display name
+  // helpers
+  function elText(el, txt){ if(!el) return; el.textContent = txt; }
+  function showEl(el){ if(!el) return; el.style.display = 'block'; }
+  function hideEl(el){ if(!el) return; el.style.display = 'none'; }
+
   function normalizeNamePart(s){ return (s||'').trim().replace(/\s+/g,' ').replace(/[^\w.\-' ]/g,''); }
   function buildDisplayName(){
-    const f = normalizeNamePart(firstName.value);
-    const m = normalizeNamePart(middleName.value);
-    const l = normalizeNamePart(lastName.value);
-    const s = normalizeNamePart(suffix.value);
+    const f = normalizeNamePart(firstName && firstName.value);
+    const m = normalizeNamePart(middleName && middleName.value);
+    const l = normalizeNamePart(lastName && lastName.value);
+    const s = normalizeNamePart(suffix && suffix.value);
     let out = f || '';
     if(m) out += (out ? ' ' : '') + m;
     if(l) out += (out ? ' ' : '') + l;
     if(s) out += (s ? ', ' + s : '');
     return out || '—';
   }
-  function updatePreview(){ displayNamePreview.textContent = 'Preview: ' + buildDisplayName(); }
-  [firstName, middleName, lastName, suffix].forEach(i => i.addEventListener('input', updatePreview));
+  function updatePreview(){ if(displayNamePreview) displayNamePreview.textContent = 'Preview: ' + buildDisplayName(); }
+  [firstName, middleName, lastName, suffix].forEach(i => { if(i) i.addEventListener('input', updatePreview); });
   updatePreview();
 
-  // enforce no digits in names
-  function containsDigits(s){ return /\d/.test(s); }
-  [firstName, middleName, lastName, suffix].forEach(el => {
-    el.addEventListener('input', () => {
-      const id = el.id;
-      const errEl = (id === 'firstName') ? firstNameError : (id === 'lastName') ? lastNameError : null;
-      if(containsDigits(el.value)){
-        if(errEl) { errEl.textContent = (errEl.id==='firstNameError' || errEl.id==='lastNameError') ? `${errEl.id==='firstNameError' ? 'First' : 'Last'} name must not contain numbers` : ''; errEl.style.display = 'block'; }
-        el.classList.add('error');
-      } else {
-        if(errEl) errEl.style.display = 'none';
-        el.classList.remove('error');
-      }
-      updatePreview();
-    });
-  });
+  function containsDigits(s){ return /\d/.test(String(s||'')); }
 
-  // toggle extras
-  toggleExtrasBtn.addEventListener('click', () => {
-    const showing = nameExtras.style.display === 'grid';
-    nameExtras.style.display = showing ? 'none' : 'grid';
-    toggleExtrasBtn.textContent = showing ? 'Add middle / suffix' : 'Hide middle / suffix';
-    updatePreview();
-  });
-
-  // keep input text color consistent after toggling
-  function reapplyInputColor(){
-    document.querySelectorAll('.input').forEach(i => {
-      i.style.color = getComputedStyle(document.documentElement).getPropertyValue('--input-text').trim();
-      i.style.webkitTextFillColor = getComputedStyle(document.documentElement).getPropertyValue('--input-text').trim();
-    });
+  // validation helpers
+  function validGmailAddress(raw){
+    if(!raw) return false;
+    const v = String(raw).trim().toLowerCase();
+    return v.endsWith('@gmail.com') && v.indexOf('@') > 0;
   }
 
-  // outlined eye toggle handlers (we replace inner paths only)
-  togglePassword.addEventListener('click', () => {
-    if(password.type === 'password'){
-      password.type = 'text';
-      togglePassword.setAttribute('aria-label','Hide password');
-      // eye-off outlined: combine slash + partial paths to represent "closed"
-      eyeIcon.innerHTML =
-        '<path d="M3 3l18 18"></path>' +
-        '<path d="M9.88 9.88a3 3 0 104.24 4.24"></path>' +
-        '<path d="M2.46 12C3.73 7.94 7.52 5 12 5c1.63 0 3.14.37 4.5 1.03"></path>';
-    } else {
-      password.type = 'password';
-      togglePassword.setAttribute('aria-label','Show password');
-      // eye outlined (open)
-      eyeIcon.innerHTML =
-        '<path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>' +
-        '<circle cx="12" cy="12" r="3"></circle>';
-    }
-    setTimeout(reapplyInputColor, 0);
-  });
-
-  toggleConfirmPassword.addEventListener('click', () => {
-    if(confirmPassword.type === 'password'){
-      confirmPassword.type = 'text';
-      toggleConfirmPassword.setAttribute('aria-label','Hide confirm password');
-      eyeConfirmIcon.innerHTML =
-        '<path d="M3 3l18 18"></path>' +
-        '<path d="M9.88 9.88a3 3 0 104.24 4.24"></path>' +
-        '<path d="M2.46 12C3.73 7.94 7.52 5 12 5c1.63 0 3.14.37 4.5 1.03"></path>';
-    } else {
-      confirmPassword.type = 'password';
-      toggleConfirmPassword.setAttribute('aria-label','Show confirm password');
-      eyeConfirmIcon.innerHTML =
-        '<path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>' +
-        '<circle cx="12" cy="12" r="3"></circle>';
-    }
-    setTimeout(reapplyInputColor, 0);
-  });
-
-  // password strength scoring
+  // password strength
   function assessPassword(str){
+    const s = String(str || '');
     let score = 0;
-    if(!str) return {score:0,label:'—',pct:0,color:'#f97316'};
-    if(str.length >= 8) score += 1;
-    if(/[A-Z]/.test(str) && /[a-z]/.test(str)) score += 1;
-    if(/\d/.test(str)) score += 1;
-    if(/[!@#$%^&*()_\-+={[}\]|\\:;"'<>,.?/]/.test(str)) score += 1;
+    if(s.length >= 8) score++;
+    if(/[A-Z]/.test(s) && /[a-z]/.test(s)) score++;
+    if(/\d/.test(s)) score++;
+    if(/[!@#$%^&*()_\-+={[}\]|\\:;"'<>,.?/]/.test(s)) score++;
     if(score <= 1) return {score,label:'Weak',pct:25,color:'#f97316'};
     if(score === 2) return {score,label:'Fair',pct:50,color:'#f59e0b'};
     if(score === 3) return {score,label:'Good',pct:75,color:'#10b981'};
     return {score,label:'Strong',pct:100,color:'#059669'};
   }
 
-  password.addEventListener('input', () => {
-    const val = password.value || '';
-    const r = assessPassword(val);
-    const fill = document.getElementById('strengthFill');
-    fill.style.width = (r.pct||0) + '%';
-    fill.style.background = r.color || '#f97316';
-    strengthText.textContent = r.label || '—';
-    reapplyInputColor();
+  // enforce no digits in first/last
+  [firstName, lastName].forEach(el => {
+    if(!el) return;
+    el.addEventListener('input', () => {
+      const errEl = (el === firstName) ? firstNameError : lastNameError;
+      if(containsDigits(el.value)){
+        if(errEl) elText(errEl, `${el === firstName ? 'First' : 'Last'} name must not contain numbers`);
+        showEl(errEl); el.classList.add('error');
+      } else {
+        hideEl(errEl); el.classList.remove('error');
+      }
+      updatePreview();
+    });
   });
 
-  // modal utilities (compact)
-  let otpInterval = null;
-  function showModal(message){
-    document.getElementById('twoFAMsg').textContent = message || 'We sent a verification code to your email.';
-    twoFAModal.classList.add('show');
-    twoFAModal.setAttribute('aria-hidden','false');
-    otpInput.value = ''; otpInput.disabled = false; modalMsg.style.display = 'none';
-    startOtpTimer(180);
-    setTimeout(()=> otpInput.focus(), 200);
+  // toggle extras
+  if(toggleExtrasBtn && nameExtras){
+    toggleExtrasBtn.addEventListener('click', () => {
+      const showing = nameExtras.style.display === 'grid';
+      nameExtras.style.display = showing ? 'none' : 'grid';
+      toggleExtrasBtn.textContent = showing ? 'Add middle / suffix' : 'Hide middle / suffix';
+      updatePreview();
+    });
   }
-  function closeModal(){
-    twoFAModal.classList.remove('show');
-    twoFAModal.setAttribute('aria-hidden','true');
-    stopOtpTimer();
-  }
-  function startOtpTimer(seconds){
-    stopOtpTimer();
-    let s = seconds;
-    function tick(){ if(s<=0){ otpTimer.textContent='00:00'; stopOtpTimer(); otpInput.disabled=true; } else { otpTimer.textContent = formatTime(s); s--; } }
-    tick(); otpInterval = setInterval(tick,1000);
-  }
-  function stopOtpTimer(){ if(otpInterval) clearInterval(otpInterval); otpInterval = null; }
-  function formatTime(sec){ const m = Math.floor(sec/60); const s = sec%60; return String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0'); }
 
-  // small flash helper
+  // keep input text color consistent
+  function reapplyInputColor(){
+    document.querySelectorAll('.input').forEach(i => {
+      const v = getComputedStyle(document.documentElement).getPropertyValue('--input-text').trim();
+      i.style.color = v; i.style.webkitTextFillColor = v;
+    });
+  }
+
+  // eye SVG helpers (safe - check node exists)
+  function makeEyeOpen(){ return '<path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path><circle cx="12" cy="12" r="3"></circle>'; }
+  function makeEyeClosed(){ return '<path d="M3 3l18 18"></path><path d="M9.88 9.88a3 3 0 104.24 4.24"></path><path d="M2.46 12C3.73 7.94 7.52 5 12 5c1.63 0 3.14.37 4.5 1.03"></path>'; }
+
+  // toggle password visibility safely
+  if(togglePassword && password && eyeIcon){
+    togglePassword.addEventListener('click', () => {
+      if(password.type === 'password'){ password.type = 'text'; togglePassword.setAttribute('aria-label','Hide password'); eyeIcon.innerHTML = makeEyeClosed(); }
+      else { password.type = 'password'; togglePassword.setAttribute('aria-label','Show password'); eyeIcon.innerHTML = makeEyeOpen(); }
+      setTimeout(reapplyInputColor, 0);
+    });
+  }
+
+  if(toggleConfirmPassword && confirmPassword && eyeConfirmIcon){
+    toggleConfirmPassword.addEventListener('click', () => {
+      if(confirmPassword.type === 'password'){ confirmPassword.type = 'text'; toggleConfirmPassword.setAttribute('aria-label','Hide confirm password'); eyeConfirmIcon.innerHTML = makeEyeClosed(); }
+      else { confirmPassword.type = 'password'; toggleConfirmPassword.setAttribute('aria-label','Show confirm password'); eyeConfirmIcon.innerHTML = makeEyeOpen(); }
+      setTimeout(reapplyInputColor, 0);
+    });
+  }
+
+  // reflect password strength
+  if(password){
+    password.addEventListener('input', () => {
+      const r = assessPassword(password.value);
+      if(strengthFill) strengthFill.style.width = (r.pct||0) + '%';
+      if(strengthFill) strengthFill.style.background = r.color || '#f97316';
+      if(strengthText) strengthText.textContent = r.label || '—';
+      reapplyInputColor();
+    });
+  }
+
+  // modal timer utilities
+  let otpInterval = null;
+  function formatTime(t){ const m = Math.floor(t/60); const s = t%60; return String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0'); }
+  function startOtpTimer(seconds){
+    if(!otpTimer) return;
+    clearInterval(otpInterval);
+    let s = seconds;
+    otpTimer.textContent = formatTime(s);
+    otpInterval = setInterval(() => { s--; if(s < 0){ clearInterval(otpInterval); otpTimer.textContent = '00:00'; if(otpInput) otpInput.disabled = true; } else { otpTimer.textContent = formatTime(s); } }, 1000);
+  }
+  function stopOtpTimer(){ clearInterval(otpInterval); otpInterval = null; }
+
   function showFlash(msg, type='error'){
-    const container = document.getElementById('flashContainer');
+    const container = $('flashContainer');
+    if(!container) return;
     container.innerHTML = '';
     const d = document.createElement('div');
     d.style.padding='8px'; d.style.margin='6px'; d.style.borderRadius='8px'; d.style.fontWeight='700';
@@ -498,124 +484,138 @@ document.addEventListener('DOMContentLoaded', function(){
     setTimeout(()=> { if(d.parentNode) d.parentNode.removeChild(d); }, 5000);
   }
 
-  // Send code
-  sendCodeBtn.addEventListener('click', async function(){
-    const em = (email.value || '').trim();
-    if(!em || !em.endsWith('@gmail.com')){ emailError.style.display = 'block'; email.classList.add('error'); showFlash('Enter a valid Gmail address before sending code','error'); return; }
-    emailError.style.display = 'none'; email.classList.remove('error');
+  // send code handler
+  if(sendCodeBtn && email){
+    sendCodeBtn.addEventListener('click', async () => {
+      const emRaw = String(email.value || '').trim();
+      if(!validGmailAddress(emRaw)){ showEl(emailError); email.classList.add('error'); showFlash('Enter a valid Gmail address before sending code','error'); return; }
+      hideEl(emailError); email.classList.remove('error');
 
-    const prev = sendCodeBtn.innerHTML;
-    sendCodeBtn.disabled = true;
-    sendCodeBtn.innerHTML = 'Sending...';
-    try{
-      const res = await fetch('/api/2fa/send', { method:'POST', credentials:'same-origin', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email: em }) });
-      const data = await res.json().catch(()=>({}));
-      if(!res.ok){ showFlash(data.message || 'Failed to send code','error'); }
-      else { showFlash(data.message || 'Verification code sent — check your inbox','success'); showModal(data.message || 'We sent a verification code to your email.'); }
-    } catch(err){
-      console.error('send code error', err); showFlash('Network error sending code','error');
-    } finally { sendCodeBtn.disabled = false; sendCodeBtn.innerHTML = prev; }
-  });
-
-  // modal verify (compact)
-  modalVerify.addEventListener('click', async function(){
-    modalMsg.style.display = 'none';
-    const code = (otpInput.value || '').trim();
-    if(!code){ modalMsg.textContent = 'Please enter the verification code'; modalMsg.style.display='block'; return; }
-    modalVerify.disabled = true; const prev = modalVerify.innerHTML; modalVerify.innerHTML = 'Verifying...';
-    try{
-      const payload = { email: email.value.trim(), code: code };
-      const res = await fetch('/api/2fa/verify', { method:'POST', credentials:'same-origin', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
-      const data = await res.json().catch(()=>({}));
-      if(!res.ok){ modalMsg.textContent = data.message || 'Verification failed'; modalMsg.style.display='block'; }
-      else { modalMsg.textContent = data.message || 'Verified — redirecting'; modalMsg.style.display='block'; setTimeout(()=> window.location.href = data.redirect_url || '/home', 750); }
-    } catch(err){ console.error(err); modalMsg.textContent = 'Network error verifying code'; modalMsg.style.display='block'; }
-    modalVerify.disabled = false; modalVerify.innerHTML = prev;
-  });
-
-  modalCancel.addEventListener('click', ()=>{ closeModal(); showFlash('Two-step verification cancelled','error'); });
-  modalResend.addEventListener('click', async ()=>{
-    const em = (email.value || '').trim();
-    if(!em){ showFlash('Enter your email first','error'); return; }
-    modalResend.disabled = true;
-    try{
-      const res = await fetch('/api/2fa/resend', { method:'POST', credentials:'same-origin', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email: em }) });
-      const data = await res.json().catch(()=>({}));
-      if(!res.ok) showFlash(data.message || 'Failed to resend code','error'); else { showFlash(data.message || 'Code resent','success'); startOtpTimer(180); otpInput.disabled=false; otpInput.focus(); }
-    } catch(err){ console.error(err); showFlash('Network error while resending','error'); }
-    modalResend.disabled = false;
-  });
-
-  // submit form
-  document.getElementById('signupForm').addEventListener('submit', async function(e){
-    e.preventDefault();
-    document.querySelectorAll('.error-text').forEach(x => x.style.display='none');
-    document.querySelectorAll('.input').forEach(x => x.classList.remove('error'));
-
-    let ok = true;
-    if(!firstName.value.trim() || containsDigits(firstName.value)){ firstNameError.style.display='block'; firstName.classList.add('error'); ok=false; }
-    if(!lastName.value.trim() || containsDigits(lastName.value)){ lastNameError.style.display='block'; lastName.classList.add('error'); ok=false; }
-    const em = (email.value||'').trim();
-    if(!em || !em.endsWith('@gmail.com')){ emailError.style.display='block'; email.classList.add('error'); ok=false; }
-
-    const pw = password.value || '';
-    const pwInfo = assessPassword(pw);
-    if(!(pwInfo.score >= 3)){ passwordError.style.display='block'; password.classList.add('error'); ok=false; }
-    if(confirmPassword.value !== pw){ confirmPasswordError.style.display='block'; confirmPassword.classList.add('error'); ok=false; }
-
-    if(!ok){ showFlash('Please fix the errors and try again','error'); return; }
-
-    const payload = {
-      first_name: firstName.value.trim(),
-      middle_name: middleName.value.trim(),
-      last_name: lastName.value.trim(),
-      suffix: suffix.value.trim(),
-      email: em,
-      password: pw,
-      confirmPassword: confirmPassword.value
-    };
-
-    createBtn.disabled = true;
-    const prevCreate = createBtn.innerHTML;
-    createBtn.innerHTML = 'Creating...';
-    try{
-      const res = await fetch('/api/signup', { method:'POST', credentials:'same-origin', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
-      const data = await res.json().catch(()=>({}));
-      if(!res.ok){
-        if(data && data.field_errors){
-          for(const k in data.field_errors){
-            const map = { first_name:'firstNameError', last_name:'lastNameError', email:'emailError', password:'passwordError', confirmPassword:'confirmPasswordError' };
-            if(map[k]){ const el = document.getElementById(map[k]); el.textContent = data.field_errors[k]; el.style.display='block'; const input = document.getElementById(map[k].replace('Error','')); if(input) input.classList.add('error'); }
-          }
-        }
-        showFlash(data && data.message ? data.message : 'Signup failed. Please try again.', 'error');
-      } else {
-        showFlash('Account created. Sending verification code...', 'success');
-        try{
-          const sendRes = await fetch('/api/2fa/send', { method:'POST', credentials:'same-origin', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email: em, user_id: data && data.user_id }) });
-          const sendJson = await sendRes.json().catch(()=>({}));
-          if(!sendRes.ok){ showFlash(sendJson.message || 'Failed to send verification code. Request manually.', 'error'); } else { showModal(sendJson.message || 'Verification code sent.'); }
-        } catch(err){ console.error(err); showFlash('Network error sending verification code', 'error'); }
+      const prev = sendCodeBtn.innerHTML;
+      sendCodeBtn.disabled = true; sendCodeBtn.innerHTML = 'Sending...';
+      try{
+        const res = await fetch('/api/2fa/send', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ email: emRaw })
+        });
+        const data = await res.json().catch(()=>({}));
+        if(!res.ok){ showFlash(data.message || 'Failed to send code', 'error'); }
+        else { showFlash(data.message || 'Verification code sent — check your inbox', 'success'); if(twoFAModal) { $('twoFAMsg').textContent = data.message || 'We sent a verification code to your email.'; twoFAModal.classList.add('show'); twoFAModal.setAttribute('aria-hidden','false'); if(otpInput){ otpInput.value=''; otpInput.disabled=false; otpInput.focus(); } startOtpTimer(180); } }
+      } catch(err){
+        console.error('send code error', err);
+        showFlash('Network error sending code', 'error');
+      } finally {
+        sendCodeBtn.disabled = false; sendCodeBtn.innerHTML = prev;
       }
-    } catch(err){ console.error(err); showFlash('Network error creating account', 'error'); }
-    finally{ createBtn.disabled = false; createBtn.innerHTML = prevCreate; }
-  });
-
-  // helpers
-  function containsDigits(s){ return /\d/.test(s); }
-  function assessPassword(str){
-    let score = 0;
-    if(!str) return {score:0,label:'—',pct:0,color:'#f97316'};
-    if(str.length >= 8) score++;
-    if(/[A-Z]/.test(str) && /[a-z]/.test(str)) score++;
-    if(/\d/.test(str)) score++;
-    if(/[!@#$%^&*()_\-+={[}\]|\\:;"'<>,.?/]/.test(str)) score++;
-    if(score <= 1) return {score,label:'Weak',pct:25,color:'#f97316'};
-    if(score === 2) return {score,label:'Fair',pct:50,color:'#f59e0b'};
-    if(score === 3) return {score,label:'Good',pct:75,color:'#10b981'};
-    return {score,label:'Strong',pct:100,color:'#059669'};
+    });
   }
+
+  // modal verify
+  if(modalVerify && otpInput && email){
+    modalVerify.addEventListener('click', async () => {
+      modalMsg && (modalMsg.style.display = 'none');
+      const code = String(otpInput.value || '').trim();
+      if(!code){ if(modalMsg){ modalMsg.textContent='Please enter the verification code'; modalMsg.style.display='block'; } return; }
+      modalVerify.disabled = true; const prev = modalVerify.innerHTML; modalVerify.innerHTML = 'Verifying...';
+      try {
+        const payload = { email: String(email.value || '').trim(), code };
+        const res = await fetch('/api/2fa/verify', {
+          method: 'POST', credentials: 'same-origin', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload)
+        });
+        const data = await res.json().catch(()=>({}));
+        if(!res.ok){
+          if(modalMsg){ modalMsg.textContent = data.message || 'Verification failed'; modalMsg.style.display='block'; }
+        } else {
+          if(modalMsg){ modalMsg.textContent = data.message || 'Verified — redirecting'; modalMsg.style.display='block'; }
+          setTimeout(()=> { window.location.href = (data && data.redirect_url) ? data.redirect_url : '/interface'; }, 700);
+        }
+      } catch(err){
+        console.error(err);
+        if(modalMsg){ modalMsg.textContent = 'Network error verifying code'; modalMsg.style.display='block'; }
+      } finally {
+        modalVerify.disabled = false; modalVerify.innerHTML = prev;
+      }
+    });
+  }
+
+  if(modalCancel){ modalCancel.addEventListener('click', () => { if(twoFAModal) { twoFAModal.classList.remove('show'); twoFAModal.setAttribute('aria-hidden','true'); } stopOtpTimer(); showFlash('Two-step verification cancelled','error'); }); }
+  if(modalResend){
+    modalResend.addEventListener('click', async () => {
+      const emRaw = String(email && email.value || '').trim();
+      if(!validGmailAddress(emRaw)){ showFlash('Enter your email first','error'); return; }
+      modalResend.disabled = true;
+      try{
+        const res = await fetch('/api/2fa/resend', { method:'POST', credentials:'same-origin', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email: emRaw }) });
+        const data = await res.json().catch(()=>({}));
+        if(!res.ok) showFlash(data.message || 'Failed to resend code','error'); else { showFlash(data.message || 'Code resent','success'); startOtpTimer(180); if(otpInput){ otpInput.disabled=false; otpInput.focus(); } }
+      } catch(err){ console.error(err); showFlash('Network error while resending','error'); }
+      modalResend.disabled = false;
+    });
+  }
+
+  // submit signup
+  const signupForm = document.querySelector('#signupForm');
+  if(signupForm){
+    signupForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      document.querySelectorAll('.error-text').forEach(x => x.style.display='none');
+      document.querySelectorAll('.input').forEach(x => x.classList.remove('error'));
+
+      let ok = true;
+      if(!firstName || !firstName.value.trim() || containsDigits(firstName.value)){ showEl(firstNameError); firstName && firstName.classList.add('error'); ok = false; }
+      if(!lastName || !lastName.value.trim() || containsDigits(lastName.value)){ showEl(lastNameError); lastName && lastName.classList.add('error'); ok = false; }
+      const emRaw = String(email && email.value || '').trim();
+      if(!validGmailAddress(emRaw)){ showEl(emailError); email && email.classList.add('error'); ok = false; }
+
+      const pw = String(password && password.value || '');
+      const pwInfo = assessPassword(pw);
+      if(!(pwInfo.score >= 3)){ showEl(passwordError); password && password.classList.add('error'); ok = false; }
+      if(String(confirmPassword && confirmPassword.value || '') !== pw){ showEl(confirmPasswordError); confirmPassword && confirmPassword.classList.add('error'); ok = false; }
+
+      if(!ok){ showFlash('Please fix the errors and try again','error'); return; }
+
+      const payload = {
+        first_name: firstName.value.trim(),
+        middle_name: middleName && middleName.value.trim(),
+        last_name: lastName.value.trim(),
+        suffix: suffix && suffix.value.trim(),
+        email: emRaw,
+        password: pw,
+        confirmPassword: confirmPassword.value
+      };
+
+      createBtn.disabled = true; const prevCreate = createBtn.innerHTML; createBtn.innerHTML = 'Creating...';
+      try {
+        const res = await fetch('/api/signup', { method:'POST', credentials:'same-origin', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+        const data = await res.json().catch(()=>({}));
+        if(!res.ok){
+          if(data && data.field_errors){
+            const map = { first_name:'firstNameError', last_name:'lastNameError', email:'emailError', password:'passwordError', confirmPassword:'confirmPasswordError' };
+            for(const k in data.field_errors){
+              if(map[k]){ const el = $(map[k]); if(el){ el.textContent = data.field_errors[k]; el.style.display='block'; const input = $(map[k].replace('Error','')); input && input.classList.add('error'); } }
+            }
+          }
+          showFlash(data && data.message ? data.message : 'Signup failed. Please try again.', 'error');
+        } else {
+          showFlash('Account created. Sending verification code...', 'success');
+          try {
+            const sendRes = await fetch('/api/2fa/send', { method:'POST', credentials:'same-origin', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email: emRaw, user_id: data && data.user_id }) });
+            const sendJson = await sendRes.json().catch(()=>({}));
+            if(!sendRes.ok){ showFlash(sendJson.message || 'Failed to send verification code. Request manually.', 'error'); } else { if(twoFAModal){ $('twoFAMsg').textContent = sendJson.message || 'Verification code sent.'; twoFAModal.classList.add('show'); twoFAModal.setAttribute('aria-hidden','false'); startOtpTimer(180); } }
+          } catch(err){ console.error(err); showFlash('Network error sending verification code', 'error'); }
+        }
+      } catch(err){
+        console.error(err);
+        showFlash('Network error creating account', 'error');
+      } finally {
+        createBtn.disabled = false; createBtn.innerHTML = prevCreate;
+      }
+    });
+  }
+
+  // initial reapply (in case color vars not applied)
+  setTimeout(reapplyInputColor, 0);
 });
 </script>
-</body>
-</html>
