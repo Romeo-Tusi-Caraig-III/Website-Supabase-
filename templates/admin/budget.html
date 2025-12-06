@@ -11,239 +11,529 @@
     :root{
       --accent:#16a34a;
       --emerald-600:#059669;
+      --emerald-700:#047857;
       --gray-50:#f9fafb;
       --gray-100:#f3f4f6;
       --gray-200:#e5e7eb;
       --gray-300:#d1d5db;
       --gray-600:#4b5563;
       --gray-700:#374151;
+      --gray-800:#1f2937;
       --white:#ffffff;
+      --red-600:#dc2626;
       --radius-lg:12px;
       --shadow-sm:0 12px 40px rgba(12,18,30,0.06);
       --card-border:1px solid rgba(0,0,0,0.04);
-      --budget-max-width: 1120px;
     }
 
-    .page-topbar { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:16px; border-radius:12px; background:var(--white); border:1px solid var(--gray-200); box-shadow:var(--shadow-sm); margin-bottom:12px; }
+    body { background: var(--gray-50); }
+    
+    .page-topbar { 
+      display:flex; justify-content:space-between; align-items:center; 
+      gap:12px; padding:16px; border-radius:12px; 
+      background:var(--white); border:1px solid var(--gray-200); 
+      box-shadow:var(--shadow-sm); margin-bottom:12px; 
+    }
     .page-topbar .greeting h1{margin:0;font-size:20px;font-weight:800;color:#0f172a}
     .page-topbar .greeting p{margin:6px 0 0;color:var(--gray-600);font-weight:600;font-size:0.95rem}
     .page-topbar .actions{display:flex;gap:8px;align-items:center}
 
-    .budget-summary{display:grid;grid-template-columns:repeat(4,minmax(140px,1fr));gap:12px;margin-top:8px}
-    .tile{background:var(--white);border-radius:12px;padding:12px;border:var(--card-border);box-shadow:var(--shadow-sm)}
-    .tile .label{font-weight:700;color:var(--gray-600);font-size:12px}
-    .tile .value{font-weight:800;font-size:18px;margin-top:6px}
+    .budget-summary{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+      gap:12px;
+      margin-top:8px
+    }
+    
+    .tile{
+      background:var(--white);
+      border-radius:12px;
+      padding:14px;
+      border:var(--card-border);
+      box-shadow:var(--shadow-sm);
+      transition: transform 0.2s;
+    }
+    .tile:hover { transform: translateY(-2px); }
+    .tile .label{font-weight:700;color:var(--gray-600);font-size:12px;text-transform:uppercase}
+    .tile .value{font-weight:800;font-size:20px;margin-top:6px;color:var(--gray-800)}
 
-    .budget-tabs{display:flex;gap:8px;margin-top:10px}
-    .budget-tab{padding:8px 12px;border-radius:999px;background:var(--white);border:1px solid var(--gray-200);cursor:pointer;font-weight:700}
-    .budget-tab.active{background:var(--emerald-600);color:#fff;border-color:transparent}
+    .budget-tabs{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+    .budget-tab{
+      padding:10px 16px;
+      border-radius:999px;
+      background:var(--white);
+      border:1px solid var(--gray-200);
+      cursor:pointer;
+      font-weight:700;
+      transition: all 0.2s;
+    }
+    .budget-tab:hover { background: var(--gray-100); }
+    .budget-tab.active{
+      background:var(--emerald-600);
+      color:#fff;
+      border-color:transparent;
+    }
 
-    .budget-grid{display:grid;grid-template-columns:2fr 360px;gap:14px;margin-top:12px;align-items:start}
-    @media(max-width:1100px){ .budget-grid{grid-template-columns:1fr} .budget-summary{grid-template-columns:1fr 1fr} }
+    .budget-grid{
+      display:grid;
+      grid-template-columns:1fr 400px;
+      gap:14px;
+      margin-top:12px;
+      align-items:start
+    }
+    @media(max-width:1100px){ 
+      .budget-grid{grid-template-columns:1fr} 
+      .budget-summary{grid-template-columns:repeat(2,1fr)} 
+    }
 
-    .panel{background:var(--white);border-radius:12px;padding:14px;border:var(--card-border);box-shadow:var(--shadow-sm)}
-    .panel h3{margin:0 0 12px 0;font-size:16px;color:#0f172a}
+    .panel{
+      background:var(--white);
+      border-radius:12px;
+      padding:16px;
+      border:var(--card-border);
+      box-shadow:var(--shadow-sm)
+    }
+    .panel h3{margin:0 0 14px 0;font-size:17px;color:#0f172a;font-weight:800}
 
-    .category{display:flex;gap:12px;align-items:flex-start;margin-bottom:12px}
+    .category{
+      display:flex;
+      gap:12px;
+      align-items:flex-start;
+      margin-bottom:14px;
+      padding:12px;
+      border-radius:8px;
+      background:var(--gray-50);
+    }
     .cat-info{flex:1}
     .cat-title{display:flex;justify-content:space-between;align-items:center}
     .cat-sub{color:var(--gray-600);font-size:13px;margin-top:6px}
-    .bar{height:10px;background:#eef2f7;border-radius:999px;overflow:hidden;margin-top:8px}
-    .bar > span{height:100%;display:block;background:#0ea5e9}
+    .bar{
+      height:10px;
+      background:#eef2f7;
+      border-radius:999px;
+      overflow:hidden;
+      margin-top:8px;
+    }
+    .bar > span{
+      height:100%;
+      display:block;
+      background:var(--emerald-600);
+      transition: width 0.3s;
+    }
 
-    .tx-list{display:flex;flex-direction:column;gap:8px;max-height:420px;overflow:auto;padding-right:6px}
-    .tx{display:flex;justify-content:space-between;align-items:center;padding:10px;border-radius:10px;border:1px solid #eef1f6;background:var(--white)}
-    .tx .left{display:flex;flex-direction:column}
-    .tx .desc{font-weight:700}
-    .tx .meta{font-size:13px;color:var(--gray-600)}
-    .amount.negative{color:#ef4444;font-weight:800}
-    .amount.positive{color:var(--accent);font-weight:800}
+    .tx-list{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      max-height:480px;
+      overflow:auto;
+      padding-right:6px
+    }
+    
+    .tx{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      padding:12px;
+      border-radius:10px;
+      border:1px solid #eef1f6;
+      background:var(--white);
+      cursor:pointer;
+      transition: all 0.2s;
+    }
+    .tx:hover { 
+      background: var(--gray-50); 
+      border-color: var(--emerald-600);
+      transform: translateX(2px);
+    }
+    
+    .tx .left{display:flex;flex-direction:column;flex:1}
+    .tx .desc{font-weight:700;color:var(--gray-800)}
+    .tx .meta{font-size:13px;color:var(--gray-600);margin-top:4px}
+    .tx .right{display:flex;align-items:center;gap:10px}
+    
+    .amount{font-weight:800;font-size:16px}
+    .amount.negative{color:var(--red-600)}
+    .amount.positive{color:var(--accent)}
 
-    .chart-wrap{position:relative;width:100%;min-height:200px;padding:8px;background:var(--white);border-radius:10px;border:1px solid #eef1f6;box-shadow:var(--shadow-sm)}
-    .chart-canvas{width:100%;height:100%;min-height:160px}
+    .chart-wrap{
+      position:relative;
+      width:100%;
+      min-height:200px;
+      padding:12px;
+      background:var(--white);
+      border-radius:10px;
+      border:1px solid #eef1f6;
+      box-shadow:var(--shadow-sm)
+    }
+    .chart-canvas{width:100%;height:100%;min-height:180px}
 
-    .ticket-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:10px}
-    .ticket-table{width:100%;border-collapse:collapse}
-    .ticket-table th,.ticket-table td{padding:10px;border-bottom:1px solid #f1f3f5;text-align:left}
-    .ticket-list{display:flex;flex-direction:column;gap:8px;max-height:260px;overflow:auto}
+    .ticket-stats{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+      gap:12px;
+      margin-top:10px
+    }
+    
+    .ticket-list{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      max-height:400px;
+      overflow:auto
+    }
 
-    .pill{background:#f3f4f6;border-radius:999px;padding:6px 10px;font-weight:700;color:var(--gray-700)}
-    .modal-backdrop{display:none}
+    .pill{
+      background:#f3f4f6;
+      border-radius:999px;
+      padding:6px 12px;
+      font-weight:700;
+      color:var(--gray-700);
+      font-size:13px;
+    }
 
-    /* Modal + animation styles */
     .modal-backdrop {
-      position:fixed; inset:0; display:none; align-items:center; justify-content:center;
-      background: rgba(5,7,12,0.45); z-index:1200; padding: 20px;
-      transition: opacity 180ms ease;
+      position:fixed; 
+      inset:0; 
+      display:none; 
+      align-items:center; 
+      justify-content:center;
+      background: rgba(5,7,12,0.5); 
+      z-index:1200; 
+      padding: 20px;
+      transition: opacity 200ms ease;
       opacity:0;
     }
     .modal-backdrop.show { opacity:1; }
 
-    /* Enlarged modal and increased font sizes */
     .modal {
-      width: 900px; max-width: calc(100% - 40px);
-      background: var(--white); border-radius:12px; padding:22px;
-      box-shadow: 0 18px 50px rgba(10,15,30,0.16); border: 1px solid rgba(0,0,0,0.04);
-      transform: translateY(6px) scale(.98); opacity:0;
-      transition: transform 220ms cubic-bezier(.2,.9,.2,1), opacity 180ms ease;
-      font-size: 16px; /* base font-size for modal content */
+      width: 100%; 
+      max-width: 680px;
+      background: var(--white); 
+      border-radius:14px; 
+      padding:24px;
+      box-shadow: 0 20px 60px rgba(10,15,30,0.2); 
+      border: 1px solid rgba(0,0,0,0.06);
+      transform: translateY(8px) scale(.97); 
+      opacity:0;
+      transition: transform 240ms cubic-bezier(.2,.9,.2,1), opacity 200ms ease;
+      font-size: 15px;
+      max-height: 90vh;
+      overflow-y: auto;
     }
     .modal.show { transform: translateY(0) scale(1); opacity:1; }
+    .modal h3 { margin:0 0 16px 0; font-size:20px; font-weight:800; color:#0f172a }
 
-    .modal .modal-footer { display:flex; justify-content:flex-end; gap:8px; margin-top:12px; }
-    .btn[disabled] { opacity: 0.6; pointer-events: none; }
+    .modal .modal-body { margin:16px 0; }
+    .modal .modal-footer { 
+      display:flex; 
+      justify-content:flex-end; 
+      gap:10px; 
+      margin-top:20px;
+      padding-top:16px;
+      border-top:1px solid var(--gray-200);
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    .form-grid.single { grid-template-columns: 1fr; }
+    .form-group { display: flex; flex-direction: column; }
+    .form-group.full { grid-column: 1 / -1; }
+    
+    .form-group label {
+      font-weight: 700;
+      color: var(--gray-700);
+      font-size: 13px;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      padding: 10px 12px;
+      border: 1px solid var(--gray-300);
+      border-radius: 8px;
+      font-size: 15px;
+      transition: all 0.2s;
+    }
+    
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: var(--emerald-600);
+      box-shadow: 0 0 0 3px rgba(5,150,105,0.1);
+    }
+
+    .btn {
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-weight: 700;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+      font-size: 14px;
+    }
+    
+    .btn-primary {
+      background: var(--emerald-600);
+      color: white;
+    }
+    .btn-primary:hover { background: var(--emerald-700); }
+    
+    .btn-outline {
+      background: white;
+      border: 1px solid var(--gray-300);
+      color: var(--gray-700);
+    }
+    .btn-outline:hover { background: var(--gray-100); }
+    
+    .btn-danger {
+      background: var(--red-600);
+      color: white;
+    }
+    .btn-danger:hover { background: #b91c1c; }
+
+    .btn[disabled] { 
+      opacity: 0.5; 
+      pointer-events: none; 
+      cursor: not-allowed;
+    }
+    
     .spinner {
-      display:inline-block; width:16px; height:16px; border-radius:50%;
-      border: 2px solid rgba(255,255,255,0.2); border-top-color: rgba(255,255,255,0.9);
-      animation: spin 800ms linear infinite; vertical-align:middle; margin-left:8px;
+      display:inline-block; 
+      width:14px; 
+      height:14px; 
+      border-radius:50%;
+      border: 2px solid rgba(255,255,255,0.3); 
+      border-top-color: white;
+      animation: spin 700ms linear infinite; 
+      vertical-align:middle; 
+      margin-left:8px;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    .modal .field-error { color:#b91c1c; font-size:14px; margin-top:6px; display:none; }
-    .modal .field-error.show { display:block; }
+    .field-error { 
+      color:#b91c1c; 
+      font-size:13px; 
+      margin-top:8px; 
+      padding:8px 12px;
+      background:#fee;
+      border-radius:6px;
+      display:none; 
+    }
+    .field-error.show { display:block; }
 
-    /* Make form controls in modal a bit larger for readability */
-    .modal input, .modal select, .modal textarea { font-size:15px; padding:10px; }
-    .modal label.muted { font-size:14px; color:var(--gray-700); display:block; margin-bottom:6px }
-
-    /* ---------- Enhanced modal styling (responsive + readable) ---------- */
-    .modal.enhanced {
-      width: 100%;
-      max-width: 1100px;
-      padding: 26px;
-      font-size: 16px;
-      line-height: 1.45;
+    .receipt-preview {
+      margin-top:12px;
+      border-radius:8px;
+      border:1px solid var(--gray-200);
+      overflow:hidden;
+      background:var(--gray-50);
+      max-height:400px;
+    }
+    .receipt-preview img {
+      display:block;
+      width:100%;
+      height:auto;
+      object-fit:contain;
     }
 
-    .modal.enhanced .panel { padding: 14px; border-radius: 10px; }
-    .modal.enhanced h3 { font-size: 20px; margin-bottom: 8px; letter-spacing: -0.2px; }
-    .modal.enhanced .muted { color: var(--gray-600); font-size: 13px; }
-    .modal.enhanced .value-strong { font-weight: 800; font-size: 18px; color: #0f172a; }
-    .modal.enhanced .tx-amount { font-weight: 900; font-size: 22px; }
-    .modal.enhanced .receipt-preview { border-radius: 10px; border: 1px solid #eef1f6; overflow: hidden; background: var(--white); display:block; width:100%; max-height:560px; }
-    .modal.enhanced .tx-info-card { background: var(--white); border: var(--card-border); border-radius: 10px; padding: 12px; box-shadow: var(--shadow-sm); min-width: 260px; }
-    .modal.enhanced .modal-footer .btn { padding: 8px 12px; border-radius: 8px; font-weight: 700; }
+    .section { display: none; }
+    .section.active { display: block; }
 
-    @media (max-width: 920px) {
-      .modal.enhanced { max-width: calc(100% - 40px); padding: 18px; font-size:15px; }
-      .modal.enhanced .modal-body-grid { display:block !important; }
-      .modal.enhanced .modal-body-grid > .left,
-      .modal.enhanced .modal-body-grid > .right { width:100% !important; }
-      .modal.enhanced .tx-info-card { margin-top:12px; min-width:unset; }
-      .modal.enhanced .receipt-preview { max-height: 360px; }
+    .legend-item {
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding:8px;
+      border-radius:6px;
+      margin-bottom:6px;
     }
-    /* ---------------- end enhanced modal ---------------- */
+    .legend-item:hover { background:var(--gray-50); }
+    .legend-dot {
+      width:12px;
+      height:12px;
+      border-radius:50%;
+      flex-shrink:0;
+    }
+
+    .empty-state {
+      text-align:center;
+      padding:40px 20px;
+      color:var(--gray-600);
+    }
+    .empty-state svg {
+      width:64px;
+      height:64px;
+      margin-bottom:16px;
+      opacity:0.3;
+    }
+
+    .archive-badge {
+      background: #fbbf24;
+      color: #78350f;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
   </style>
 {% endblock %}
 
 {% block body %}
-  <div class="page-topbar" role="banner" aria-label="Budget header">
+  <div class="page-topbar" role="banner">
     <div class="greeting">
       <h1>Budget & Ticketing</h1>
       <p class="muted">Manage budgets, transactions, and event revenue</p>
     </div>
 
     <div class="actions">
-      <button id="btnAddTx" class="btn btn-primary">+ Add Transaction</button>
-      <button id="btnAddTicket" class="btn btn-outline">+ Add Event</button>
-      <button id="btnExport" class="btn" style="margin-left:8px">Export JSON</button>
-      <button id="btnExportSalesCSV" class="btn">Export Sales CSV</button>
+      <button id="btnAddTx" class="btn btn-primary">+ Transaction</button>
+      <button id="btnAddTicket" class="btn btn-outline">+ Event</button>
+      {% if session.get('role') in ['admin', 'administrator', 'superuser'] %}
+      <button id="btnArchives" class="btn">📦 Archives</button>
+      {% endif %}
     </div>
   </div>
 
-  <div class="budget-summary" role="region" aria-label="Summary tiles">
-    <div class="tile"><div class="label">Available Balance</div><div class="value" id="cardBalance">₱0.00</div></div>
-    <div class="tile"><div class="label">Total Expenses</div><div class="value" id="cardExpenses">₱0.00</div></div>
-    <div class="tile"><div class="label">Savings Rate</div><div class="value" id="cardSavings">0%</div></div>
-    <div class="tile"><div class="label">Ticket Revenue</div><div class="value" id="cardTicketRevenue">₱0.00</div></div>
+  <div class="budget-summary" role="region" aria-label="Summary">
+    <div class="tile">
+      <div class="label">Available Balance</div>
+      <div class="value" id="cardBalance">₱0.00</div>
+    </div>
+    <div class="tile">
+      <div class="label">Total Income</div>
+      <div class="value" id="cardIncome">₱0.00</div>
+    </div>
+    <div class="tile">
+      <div class="label">Total Expenses</div>
+      <div class="value" id="cardExpenses">₱0.00</div>
+    </div>
+    <div class="tile">
+      <div class="label">Ticket Revenue</div>
+      <div class="value" id="cardTicketRevenue">₱0.00</div>
+    </div>
   </div>
 
-  <div class="budget-tabs" role="tablist" aria-label="Budget tabs">
+  <div class="budget-tabs" role="tablist">
     <button class="budget-tab active" data-tab="overview">Overview</button>
     <button class="budget-tab" data-tab="categories">Categories</button>
     <button class="budget-tab" data-tab="transactions">Transactions</button>
-    <button class="budget-tab" data-tab="tickets">Ticketing Sales</button>
+    <button class="budget-tab" data-tab="tickets">Ticket Sales</button>
   </div>
 
-  <div class="budget-grid" role="main" aria-live="polite">
+  <div class="budget-grid" role="main">
     <div>
-      <!-- Overview panel -->
-      <section id="overview" class="panel section active" aria-labelledby="overviewHeading">
-        <h3 id="overviewHeading">Budget & Expenses</h3>
-        <div id="categoryList" aria-live="polite"></div>
+      <!-- Overview -->
+      <section id="overview" class="panel section active">
+        <h3>Budget by Category</h3>
+        <div id="categoryList"></div>
 
-        <div style="height:18px"></div>
-
-        <div class="panel" style="margin-top:12px">
+        <div style="margin-top:24px">
           <h3>Recent Transactions</h3>
-          <div id="txList" class="tx-list"></div>
+          <div id="txListRecent" class="tx-list"></div>
         </div>
       </section>
 
-      <section id="categories" class="panel section" style="display:none;margin-top:12px">
+      <!-- Categories -->
+      <section id="categories" class="panel section">
         <h3>Manage Categories</h3>
-        <div id="categoriesManage" style="margin-top:12px"></div>
-        <div style="margin-top:12px;display:flex;gap:8px">
-          <input id="newCatName" placeholder="New Category" style="padding:8px;flex:1"/>
-          <input id="newCatBudget" type="number" placeholder="Budget" style="padding:8px;width:150px"/>
+        <p class="muted" style="margin-bottom:16px">
+          Add and manage budget categories. Categories must exist before creating transactions.
+        </p>
+        
+        <div id="categoriesManage" style="margin-bottom:20px"></div>
+
+        {% if session.get('role') in ['admin', 'administrator', 'superuser'] %}
+        <div style="display:flex;gap:10px;padding-top:16px;border-top:1px solid var(--gray-200)">
+          <input id="newCatName" placeholder="Category Name" style="flex:1;padding:10px;border:1px solid var(--gray-300);border-radius:8px"/>
+          <input id="newCatBudget" type="number" placeholder="Monthly Budget" style="width:180px;padding:10px;border:1px solid var(--gray-300);border-radius:8px"/>
           <button id="btnAddCategory" class="btn btn-primary">Add Category</button>
         </div>
+        {% endif %}
       </section>
 
-      <section id="transactions" class="panel section" style="display:none;margin-top:12px">
-        <h3>All Transactions</h3>
-        <div id="txAll" class="tx-list" style="max-height:60vh"></div>
+      <!-- Transactions -->
+      <section id="transactions" class="panel section">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <h3 style="margin:0">All Transactions</h3>
+          <div style="display:flex;gap:8px">
+            <input type="date" id="filterStartDate" style="padding:8px;border:1px solid var(--gray-300);border-radius:6px"/>
+            <input type="date" id="filterEndDate" style="padding:8px;border:1px solid var(--gray-300);border-radius:6px"/>
+            <button id="btnFilterTx" class="btn btn-outline">Filter</button>
+          </div>
+        </div>
+        <div id="txListAll" class="tx-list" style="max-height:600px"></div>
       </section>
 
-      <!-- Tickets section moved into main column -->
-      <section id="tickets" class="panel section" style="display:none;margin-top:12px">
-        <h3>Ticketing Sales</h3>
+      <!-- Tickets -->
+      <section id="tickets" class="panel section">
+        <h3>Event Ticketing</h3>
 
-        <div class="ticket-stats" style="margin-top:8px">
-          <div class="tile"><div class="label">Total Tickets</div><div class="value" id="ticketTotal">0</div></div>
-          <div class="tile"><div class="label">Tickets Sold</div><div class="value" id="ticketSold">0</div></div>
-          <div class="tile"><div class="label">Tickets Remaining</div><div class="value" id="ticketRemaining">0</div></div>
-          <div class="tile"><div class="label">Sales Revenue</div><div class="value" id="ticketRevenue">₱0.00</div></div>
+        <div class="ticket-stats">
+          <div class="tile">
+            <div class="label">Total Tickets</div>
+            <div class="value" id="ticketTotal">0</div>
+          </div>
+          <div class="tile">
+            <div class="label">Sold</div>
+            <div class="value" id="ticketSold">0</div>
+          </div>
+          <div class="tile">
+            <div class="label">Remaining</div>
+            <div class="value" id="ticketRemaining">0</div>
+          </div>
+          <div class="tile">
+            <div class="label">Revenue</div>
+            <div class="value" id="ticketRevenue">₱0.00</div>
+          </div>
         </div>
 
-        <div style="margin-top:12px">
-          <h4 style="margin:0 0 8px 0">Events</h4>
+        <div style="margin-top:20px">
+          <h4 style="margin:0 0 12px 0">Events</h4>
           <div id="ticketEvents" class="ticket-list"></div>
         </div>
 
-        <div style="margin-top:12px">
-          <h4 style="margin:12px 0 8px 0">Recent Sales</h4>
-          <div style="overflow:auto">
-            <table class="ticket-table">
-              <thead><tr><th>Buyer</th><th>Event</th><th>Qty</th><th>Amount</th><th>Date</th></tr></thead>
-              <tbody id="recentSales"></tbody>
-            </table>
-          </div>
+        <div style="margin-top:20px">
+          <h4 style="margin:0 0 12px 0">Recent Sales</h4>
+          <div id="recentSales" style="max-height:300px;overflow:auto"></div>
         </div>
       </section>
     </div>
 
+    <!-- Sidebar -->
     <aside>
       <div class="panel">
         <h3>Expense Breakdown</h3>
-        <div class="chart-wrap" id="pieWrap"><canvas id="expensePie" class="chart-canvas" aria-label="Expense breakdown chart"></canvas></div>
-        <div id="legendList" style="margin-top:12px"></div>
+        <div class="chart-wrap">
+          <canvas id="expensePie" class="chart-canvas"></canvas>
+        </div>
+        <div id="legendList" style="margin-top:14px"></div>
       </div>
 
       <div class="panel" style="margin-top:14px">
-        <h3>Income vs Expense (Monthly)</h3>
-        <div class="chart-wrap" id="barWrap"><canvas id="incomeExpenseBar" class="chart-canvas" aria-label="Income vs expense"></canvas></div>
+        <h3>Income vs Expense</h3>
+        <div class="chart-wrap">
+          <canvas id="incomeExpenseBar" class="chart-canvas"></canvas>
+        </div>
       </div>
     </aside>
   </div>
 
-  <!-- Modal backdrop (hidden by default) -->
-  <div id="modalBackdrop" class="modal-backdrop" aria-hidden="true" style="display:none">
-    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" style="max-width:760px">
+  <!-- Modal -->
+  <div id="modalBackdrop" class="modal-backdrop" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true">
       <h3 id="modalTitle">Modal</h3>
-      <div id="modalBody"></div>
-      <div class="modal-footer" style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px">
-        <button class="btn" data-close="modalBackdrop">Cancel</button>
+      <div id="modalBody" class="modal-body"></div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" data-close="modal">Cancel</button>
         <button class="btn btn-primary" id="modalSave">Save</button>
       </div>
     </div>
@@ -252,81 +542,177 @@
 
 {% block scripts %}
 <script>
-/* Minimal helpers */
-function el(q){ return document.querySelector(q); }
-function qs(q){ return document.querySelectorAll(q); }
+// ==================== CONFIG & HELPERS ====================
 const API_ROOT = '/api/budget';
+const USER_ROLE = '{{ session.get("role", "user") }}'.toLowerCase();
+const IS_ADMIN = ['admin', 'administrator', 'superuser'].includes(USER_ROLE);
 
 const money = v => '₱' + Number(v||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
 const pct = v => (Number.isFinite(v)?v:0).toFixed(1) + '%';
-function id(){ return Math.random().toString(36).slice(2,10); }
-function today(){ return new Date().toISOString().slice(0,10); }
+const today = () => new Date().toISOString().slice(0,10);
+const escapeHtml = s => String(s||'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]);
 
-/* App state (fetched from server) */
-let store = { categories: [], funds: [], transactions: [], tickets: [] };
+// State
+let store = { categories: [], transactions: [], tickets: [] };
 
-/* Fetch helpers */
-async function apiGET(path){ const r = await fetch(path, {headers:{'Accept':'application/json'}}); if(!r.ok) throw r; return r.json(); }
-async function apiPOST(path, body){ const r = await fetch(path, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)}); const j = await r.json().catch(()=>null); if(!r.ok) throw j || r; return j; }
-async function apiPUT(path, body){ const r = await fetch(path, {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)}); const j = await r.json().catch(()=>null); if(!r.ok) throw j || r; return j; }
-async function apiDELETE(path){ const r = await fetch(path, {method:'DELETE'}); const j = await r.json().catch(()=>null); if(!r.ok) throw j || r; return j; }
+// API helpers
+async function apiGET(path){ 
+  const r = await fetch(path, {credentials:'same-origin'}); 
+  if(!r.ok) {
+    const err = await r.json().catch(()=>({message:`HTTP ${r.status}`}));
+    throw new Error(err.message || `HTTP ${r.status}`);
+  }
+  return r.json(); 
+}
 
-/* Load store from server */
+async function apiPOST(path, body, isFormData = false){ 
+  const opts = {
+    method:'POST', 
+    credentials:'same-origin',
+  };
+  if(isFormData){
+    opts.body = body;
+    // Don't set Content-Type for FormData - browser will set it with boundary
+  } else {
+    opts.headers = {'Content-Type':'application/json'};
+    opts.body = JSON.stringify(body);
+  }
+  
+  console.log('POST to:', path, 'isFormData:', isFormData);
+  
+  const r = await fetch(path, opts);
+  
+  console.log('Response status:', r.status);
+  
+  if(!r.ok) {
+    const text = await r.text();
+    console.error('Error response:', text);
+    let err;
+    try {
+      err = JSON.parse(text);
+    } catch(e) {
+      err = {message: text || `HTTP ${r.status}`};
+    }
+    throw new Error(err.message || `HTTP ${r.status}`);
+  }
+  
+  const result = await r.json();
+  console.log('Success response:', result);
+  return result;
+}
+
+async function apiPUT(path, body){ 
+  const r = await fetch(path, {
+    method:'PUT', 
+    headers:{'Content-Type':'application/json'}, 
+    body: JSON.stringify(body),
+    credentials:'same-origin'
+  }); 
+  if(!r.ok) {
+    const err = await r.json().catch(()=>({message:`HTTP ${r.status}`}));
+    throw new Error(err.message || `HTTP ${r.status}`);
+  }
+  return r.json(); 
+}
+
+async function apiDELETE(path){ 
+  const r = await fetch(path, {method:'DELETE', credentials:'same-origin'}); 
+  if(!r.ok) {
+    const err = await r.json().catch(()=>({message:`HTTP ${r.status}`}));
+    throw new Error(err.message || `HTTP ${r.status}`);
+  }
+  return r.json(); 
+}
+
+// ==================== DATA LOADING ====================
 async function loadStore(){
   try{
-    const data = await apiGET(API_ROOT);
-    store = data;
+    const [cats, txs, tickets] = await Promise.all([
+      apiGET(API_ROOT + '/categories'),
+      apiGET(API_ROOT + '/transactions'),
+      apiGET(API_ROOT + '/tickets')
+    ]);
+    
+    store.categories = cats || [];
+    store.transactions = txs || [];
+    store.tickets = tickets || [];
+    
+    console.log('Loaded data:', {
+      categories: store.categories.length,
+      transactions: store.transactions.length,
+      tickets: store.tickets.length
+    });
+    
     renderAll();
   } catch(err){
     console.error('Failed loading budget', err);
-    alert('Failed to load budget data. Check console for details.');
+    showError('Failed to load budget data: ' + err.message);
   }
 }
 
-/* Totals */
+// ==================== CALCULATIONS ====================
 function totals(){
-  const totalFunds = (store.funds||[]).reduce((a,f)=>a+Number(f.amount||0),0);
-  const income = (store.transactions||[]).filter(t=>t.type==='income').reduce((a,t)=>a+Number(t.amount||0),0);
-  const totalIncome = totalFunds + income;
-  const totalExpenses = (store.transactions||[]).filter(t=>t.type==='expense').reduce((a,t)=>a+Number(t.amount||0),0);
-  const balance = totalIncome - totalExpenses;
-  const savingsRate = totalIncome>0 ? (balance/totalIncome)*100 : 0;
-  return { totalFunds, totalIncome, totalExpenses, balance, savingsRate };
+  const income = store.transactions.filter(t=>t.type==='income').reduce((a,t)=>a+Number(t.amount||0),0);
+  const expenses = store.transactions.filter(t=>t.type==='expense').reduce((a,t)=>a+Number(t.amount||0),0);
+  const balance = income - expenses;
+  
+  // Calculate ticket revenue from all sales
+  const ticketRevenue = store.tickets.reduce((sum, ev) => {
+    const sales = ev.sales || [];
+    const eventRevenue = sales.reduce((s, sale) => s + (sale.qty * Number(ev.price||0)), 0);
+    return sum + eventRevenue;
+  }, 0);
+  
+  return { income, expenses, balance, ticketRevenue };
 }
 
 function spentByCategory(){
   const map = {};
-  (store.categories||[]).forEach(c=>map[c.name]=0);
-  for(const t of (store.transactions||[])){
-    if(t.type==='expense' && map.hasOwnProperty(t.category)) map[t.category]+=Number(t.amount||0);
-  }
+  store.categories.forEach(c=>map[c.name]=0);
+  store.transactions.filter(t=>t.type==='expense').forEach(t=>{
+    if(map.hasOwnProperty(t.category)) map[t.category]+=Number(t.amount||0);
+  });
   return map;
 }
 
-/* Rendering functions */
+// ==================== RENDERING ====================
+function renderAll(){
+  renderSummary();
+  renderCategories();
+  renderCategoriesManage();
+  renderTransactions();
+  renderTickets();
+  updateCharts();
+}
+
 function renderSummary(){
   const t = totals();
-  el('#cardBalance').textContent = money(t.balance);
-  el('#cardExpenses').textContent = money(t.totalExpenses);
-  el('#cardSavings').textContent = pct(t.savingsRate);
-  const revenue = (store.tickets||[]).reduce((sum,ev)=> {
-    const sold = (ev.sales||[]).reduce((a,s)=>a+Number(s.qty||0),0);
-    return sum + (sold * Number(ev.price||0));
-  },0);
-  el('#cardTicketRevenue').textContent = money(revenue);
+  document.getElementById('cardBalance').textContent = money(t.balance);
+  document.getElementById('cardIncome').textContent = money(t.income);
+  document.getElementById('cardExpenses').textContent = money(t.expenses);
+  document.getElementById('cardTicketRevenue').textContent = money(t.ticketRevenue);
 }
 
 function renderCategories(){
   const spent = spentByCategory();
-  const container = el('#categoryList'); container.innerHTML = '';
-  for(const c of (store.categories||[])){
+  const container = document.getElementById('categoryList');
+  
+  if(store.categories.length === 0){
+    container.innerHTML = '<div class="empty-state">No categories yet. Add one to get started.</div>';
+    return;
+  }
+  
+  container.innerHTML = '';
+  store.categories.forEach(c=>{
     const used = spent[c.name] || 0;
     const ratio = c.budget>0 ? Math.min(used/c.budget,1) : 0;
-    const row = document.createElement('div'); row.className='category';
+    
+    const row = document.createElement('div');
+    row.className='category';
     row.innerHTML = `
       <div class="cat-info">
         <div class="cat-title">
-          <div style="display:flex;gap:10px;align-items:center"><div style="width:10px;height:10px;border-radius:50%;background:#9ca3af"></div><div style="font-weight:800">${escapeHtml(c.name)}</div></div>
+          <div style="font-weight:800;font-size:15px">${escapeHtml(c.name)}</div>
           <div class="pill">${money(used)} / ${money(c.budget)}</div>
         </div>
         <div class="cat-sub">${(ratio*100).toFixed(1)}% of budget used</div>
@@ -334,206 +720,306 @@ function renderCategories(){
       </div>
     `;
     container.appendChild(row);
-  }
-  const legend = el('#legendList'); legend.innerHTML = '';
-  const spentMap = spentByCategory();
-  for(const k of Object.keys(spentMap)){
-    const item = document.createElement('div'); item.className='muted'; item.style.marginBottom='6px';
-    item.innerHTML = `<span style="display:inline-block;width:12px;height:12px;border-radius:6px;background:#9ca3af;margin-right:8px"></span>${escapeHtml(k)} — ${money(spentMap[k])}`;
+  });
+  
+  // Update legend
+  const legend = document.getElementById('legendList');
+  legend.innerHTML = '';
+  Object.keys(spent).forEach((k,i)=>{
+    const item = document.createElement('div');
+    item.className='legend-item';
+    item.innerHTML = `
+      <div class="legend-dot" style="background:${colorFor(i)}"></div>
+      <div style="flex:1;font-weight:600;font-size:13px">${escapeHtml(k)}</div>
+      <div style="font-weight:800;font-size:13px">${money(spent[k])}</div>
+    `;
     legend.appendChild(item);
-  }
-}
-
-function renderTransactions(){
-  const list = el('#txList'); list.innerHTML = '';
-  const recent = [...(store.transactions||[])].sort((a,b)=> (b.date||'').localeCompare(a.date||'')).slice(0,6);
-  for(const t of recent){
-    const node = document.createElement('div');
-    node.className='tx';
-    node.style.cursor = 'pointer';
-    node.setAttribute('data-view-tx', t.id); // clickable attribute
-    node.innerHTML = `
-      <div class="left">
-        <div class="desc">${escapeHtml(t.description || '(no desc)')}</div>
-        <div class="meta">${escapeHtml(t.category)} • ${t.date || ''}</div>
-      </div>
-      <div style="display:flex;align-items:center;gap:12px;min-width:120px;justify-content:flex-end">
-        <div class="${t.type==='expense'?'amount negative':'amount positive'}">${t.type==='expense'?'-':''}${money(t.amount)}</div>
-        <button class="btn" aria-label="View transaction" data-view-tx-btn="${t.id}">View</button>
-      </div>
-    `;
-    list.appendChild(node);
-  }
-
-  const all = el('#txAll'); all.innerHTML = '';
-  for(const t of [...(store.transactions||[])].sort((a,b)=> (b.date||'').localeCompare(a.date||''))){
-    const node = document.createElement('div'); node.className='tx';
-    node.style.cursor = 'pointer';
-    node.setAttribute('data-view-tx', t.id);
-    node.innerHTML = `
-      <div class="left">
-        <div class="desc">${escapeHtml(t.description)}</div>
-        <div class="meta">${escapeHtml(t.category)} • ${t.date || ''}</div>
-      </div>
-      <div style="display:flex;align-items:center;gap:12px">
-        <div class="${t.type==='expense'?'amount negative':'amount positive'}">${t.type==='expense'?'-':''}${money(t.amount)}</div>
-        <button class="btn" data-delete-tx="${t.id}">Delete</button>
-        <button class="btn" aria-label="View transaction" data-view-tx-btn="${t.id}">View</button>
-      </div>
-    `;
-    all.appendChild(node);
-  }
+  });
 }
 
 function renderCategoriesManage(){
-  const node = el('#categoriesManage'); node.innerHTML = '';
-  (store.categories||[]).forEach((c)=> {
-    const wrap = document.createElement('div'); wrap.className='tx'; wrap.style.display='flex'; wrap.style.justifyContent='space-between'; wrap.style.alignItems='center'; wrap.style.padding='8px'; wrap.style.borderBottom='1px solid #f1f3f5';
-    wrap.innerHTML = `<div><div style="font-weight:800">${escapeHtml(c.name)}</div><div class="muted" style="font-size:13px">Set monthly budget</div></div><div style="display:flex;gap:8px;align-items:center"><input type="number" data-cat-budget="${c.id}" value="${c.budget}" style="width:120px;padding:8px;border:1px solid #eef1f6;border-radius:8px"/><button class="btn" data-update-cat="${c.id}">Update</button><button class="btn" data-delete-cat="${c.id}">Delete</button></div>`;
-    node.appendChild(wrap);
+  const container = document.getElementById('categoriesManage');
+  
+  if(store.categories.length === 0){
+    container.innerHTML = '<div class="empty-state">No categories yet</div>';
+    return;
+  }
+  
+  container.innerHTML = '';
+  store.categories.forEach(c=>{
+    const row = document.createElement('div');
+    row.className='tx';
+    row.innerHTML = `
+      <div class="left">
+        <div class="desc">${escapeHtml(c.name)}</div>
+        <div class="meta">Monthly budget: ${money(c.budget)}</div>
+      </div>
+      <div class="right">
+        ${IS_ADMIN ? `
+          <button class="btn btn-outline" data-edit-cat="${c.id}">Edit</button>
+          <button class="btn btn-danger" data-delete-cat="${c.id}">Archive</button>
+        ` : ''}
+      </div>
+    `;
+    container.appendChild(row);
   });
 }
 
-function renderTicketsAndSales(){
-  const eventsWrap = el('#ticketEvents'); eventsWrap.innerHTML = '';
-  let totalTickets=0, soldTickets=0, revenue=0;
-  for(const ev of (store.tickets||[])){
-    const sold = (ev.sales||[]).reduce((a,s)=>a+Number(s.qty||0),0);
-    const remaining = Math.max(0, ev.total_tickets - sold);
-    totalTickets += Number(ev.total_tickets||0);
-    soldTickets += sold;
-    revenue += sold * Number(ev.price||0);
-
-    const item = document.createElement('div'); item.className='tx'; item.style.display='flex'; item.style.justifyContent='space-between'; item.style.alignItems='center';
-    item.innerHTML = `<div><div style="font-weight:800">${escapeHtml(ev.event)}</div><div class="muted">${ev.total_tickets} tickets • ${ev.price?money(ev.price):'₱0'}</div></div>
-      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
-        <div class="muted" style="font-size:13px">${sold} sold • ${remaining} left</div>
-        <div style="display:flex;gap:6px">
-          <button class="btn" data-edit-event="${ev.id}">Edit</button>
-          <button class="btn" data-add-sale="${ev.id}">Record Sale</button>
-          <button class="btn" data-delete-event="${ev.id}">Delete</button>
-        </div>
-      </div>`;
-    eventsWrap.appendChild(item);
+function renderTransactions(){
+  // Recent
+  const recent = document.getElementById('txListRecent');
+  const recentTxs = [...store.transactions].sort((a,b)=>(b.date||'').localeCompare(a.date||'')).slice(0,8);
+  
+  if(recentTxs.length === 0){
+    recent.innerHTML = '<div class="empty-state">No transactions yet</div>';
+  } else {
+    recent.innerHTML = '';
+    recentTxs.forEach(t=>{
+      recent.appendChild(createTxElement(t));
+    });
   }
-
-  el('#ticketTotal').textContent = totalTickets;
-  el('#ticketSold').textContent = soldTickets;
-  el('#ticketRemaining').textContent = Math.max(0, totalTickets - soldTickets);
-  el('#ticketRevenue').textContent = money(revenue);
-  renderSummary();
-  renderEventToggles();
-  updateTicketChartDatasets();
+  
+  // All
+  const all = document.getElementById('txListAll');
+  const allTxs = [...store.transactions].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  
+  if(allTxs.length === 0){
+    all.innerHTML = '<div class="empty-state">No transactions yet</div>';
+  } else {
+    all.innerHTML = '';
+    allTxs.forEach(t=>{
+      all.appendChild(createTxElement(t, true));
+    });
+  }
 }
 
-/* Charts (unchanged) */
-let pieChart, barChart, ticketChart;
+function createTxElement(t, showActions = false){
+  const el = document.createElement('div');
+  el.className='tx';
+  el.setAttribute('data-tx-id', t.id);
+  
+  el.innerHTML = `
+    <div class="left">
+      <div class="desc">${escapeHtml(t.description || '(no description)')}</div>
+      <div class="meta">
+        ${escapeHtml(t.category)} • ${t.date || 'No date'}
+        ${t.receipt ? ' • 📎 Receipt attached' : ''}
+      </div>
+    </div>
+    <div class="right">
+      <div class="${t.type==='expense'?'amount negative':'amount positive'}">
+        ${t.type==='expense'?'-':''}${money(t.amount)}
+      </div>
+      ${showActions && IS_ADMIN ? `
+        <button class="btn btn-danger" data-delete-tx="${t.id}">Archive</button>
+      ` : ''}
+      <button class="btn btn-outline" data-view-tx="${t.id}">View</button>
+    </div>
+  `;
+  
+  return el;
+}
+
+function renderTickets(){
+  const eventsWrap = document.getElementById('ticketEvents');
+  const salesWrap = document.getElementById('recentSales');
+  
+  let totalTickets=0, soldTickets=0, revenue=0;
+  
+  if(store.tickets.length === 0){
+    eventsWrap.innerHTML = '<div class="empty-state">No events yet</div>';
+  } else {
+    eventsWrap.innerHTML = '';
+    
+    store.tickets.forEach(ev=>{
+      const sales = ev.sales || [];
+      const sold = sales.reduce((sum, s) => sum + (s.qty || 0), 0);
+      const total = ev.total_tickets || 0;
+      const remaining = Math.max(0, total - sold);
+      
+      totalTickets += total;
+      soldTickets += sold;
+      revenue += sold * Number(ev.price||0);
+      
+      const item = document.createElement('div');
+      item.className='tx';
+      item.innerHTML = `
+        <div class="left">
+          <div class="desc">${escapeHtml(ev.event)}</div>
+          <div class="meta">
+            ${total} total • ${money(ev.price)} per ticket
+            <br>
+            <strong>${sold} sold</strong> • ${remaining} remaining
+          </div>
+        </div>
+        <div class="right" style="flex-direction:column;align-items:flex-end;gap:8px">
+          <button class="btn btn-primary" data-add-sale="${ev.id}">Record Sale</button>
+          ${IS_ADMIN ? `
+            <div style="display:flex;gap:6px">
+              <button class="btn btn-outline" data-edit-event="${ev.id}">Edit</button>
+              <button class="btn btn-danger" data-delete-event="${ev.id}">Archive</button>
+            </div>
+          ` : ''}
+        </div>
+      `;
+      eventsWrap.appendChild(item);
+    });
+  }
+  
+  document.getElementById('ticketTotal').textContent = totalTickets;
+  document.getElementById('ticketSold').textContent = soldTickets;
+  document.getElementById('ticketRemaining').textContent = Math.max(0, totalTickets - soldTickets);
+  document.getElementById('ticketRevenue').textContent = money(revenue);
+  
+  // Recent sales
+  const allSales = [];
+  store.tickets.forEach(ev=>{
+    (ev.sales||[]).forEach(s=>{
+      allSales.push({...s, event: ev.event, price: ev.price});
+    });
+  });
+  allSales.sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  
+  if(allSales.length === 0){
+    salesWrap.innerHTML = '<div class="empty-state">No sales yet</div>';
+  } else {
+    salesWrap.innerHTML = '';
+    allSales.slice(0,10).forEach(s=>{
+      const row = document.createElement('div');
+      row.className='tx';
+      row.style.padding='10px';
+      row.innerHTML = `
+        <div class="left">
+          <div class="desc">${escapeHtml(s.buyer)}</div>
+          <div class="meta">${escapeHtml(s.event)} • ${s.date || ''}</div>
+        </div>
+        <div class="right">
+          <div style="font-weight:700">${s.qty}x tickets</div>
+          <div class="amount positive">${money(s.qty * s.price)}</div>
+        </div>
+      `;
+      salesWrap.appendChild(row);
+    });
+  }
+}
+
+// ==================== CHARTS ====================
+let pieChart, barChart;
+
 function buildCharts(){
   const pieCtx = document.getElementById('expensePie').getContext('2d');
-  pieChart = new Chart(pieCtx, { type:'pie', data:{labels:[], datasets:[{data:[], backgroundColor: [], borderWidth:0}] }, options:{maintainAspectRatio:false, plugins:{legend:{display:false}}} });
-
+  pieChart = new Chart(pieCtx, {
+    type:'doughnut',
+    data:{
+      labels:[], 
+      datasets:[{
+        data:[], 
+        backgroundColor: [], 
+        borderWidth:0
+      }]
+    },
+    options:{
+      maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false}
+      }
+    }
+  });
+  
   const barCtx = document.getElementById('incomeExpenseBar').getContext('2d');
   barChart = new Chart(barCtx, {
     type:'bar',
-    data:{ labels:[], datasets:[{label:'Income', data:[]}, {label:'Expense', data:[]}] },
-    options:{maintainAspectRatio:false, scales:{y:{beginAtZero:true}}, plugins:{legend:{position:'bottom'}}}
+    data:{
+      labels:[],
+      datasets:[
+        {label:'Income', data:[], backgroundColor:'#10b981'},
+        {label:'Expense', data:[], backgroundColor:'#ef4444'}
+      ]
+    },
+    options:{
+      maintainAspectRatio:false,
+      scales:{y:{beginAtZero:true}},
+      plugins:{legend:{position:'bottom'}}
+    }
   });
-
-  const ticketCanvas = document.getElementById('ticketSalesChart');
-  if(ticketCanvas){
-    ticketChart = new Chart(ticketCanvas.getContext('2d'), { type:'line', data:{labels:[], datasets:[]}, options:{maintainAspectRatio:false, scales:{y:{beginAtZero:true}}} });
-  }
+  
   updateCharts();
 }
 
-function colorFor(i){ const pal = ['#7c3aed','#22c55e','#f59e0b','#ef4444','#3b82f6','#a78bfa','#34d399','#fb7185']; return pal[i % pal.length]; }
-function monthsRange(n=6){ const m=[]; const d=new Date(); d.setDate(1); for(let i=n-1;i>=0;i--){ const dt=new Date(d.getFullYear(), d.getMonth()-i, 1); m.push(dt.toISOString().slice(0,7)); } return m; }
-function updateCharts(){ /* updates pie and bar */ 
-  const spent = spentByCategory();
-  pieChart.data.labels = (store.categories||[]).map(c=>c.name);
-  pieChart.data.datasets[0].data = (store.categories||[]).map(c=>spent[c.name] || 0);
-  pieChart.data.datasets[0].backgroundColor = (store.categories||[]).map((_,i)=>colorFor(i));
-  pieChart.update();
+function colorFor(i){ 
+  const pal = ['#7c3aed','#22c55e','#f59e0b','#ef4444','#3b82f6','#a78bfa','#34d399','#fb7185'];
+  return pal[i % pal.length];
+}
 
+function monthsRange(n=6){ 
+  const m=[];
+  const d=new Date();
+  d.setDate(1);
+  for(let i=n-1;i>=0;i--){
+    const dt=new Date(d.getFullYear(), d.getMonth()-i, 1);
+    m.push(dt.toISOString().slice(0,7));
+  }
+  return m;
+}
+
+function updateCharts(){
+  // Pie chart
+  const spent = spentByCategory();
+  pieChart.data.labels = store.categories.map(c=>c.name);
+  pieChart.data.datasets[0].data = store.categories.map(c=>spent[c.name] || 0);
+  pieChart.data.datasets[0].backgroundColor = store.categories.map((_,i)=>colorFor(i));
+  pieChart.update();
+  
+  // Bar chart
   const months = monthsRange(6);
   const incomeData = months.map(()=>0);
   const expenseData = months.map(()=>0);
-  const addMonth = (arr, date, amount)=>{ const key = (date||'').slice(0,7); const idx = months.indexOf(key); if(idx>=0) arr[idx]+=Number(amount||0); };
-  for(const f of (store.funds||[])) addMonth(incomeData, f.date, f.amount);
-  for(const t of (store.transactions||[])){
+  
+  const addMonth = (arr, date, amount)=>{
+    const key = (date||'').slice(0,7);
+    const idx = months.indexOf(key);
+    if(idx>=0) arr[idx]+=Number(amount||0);
+  };
+  
+  store.transactions.forEach(t=>{
     if(t.type==='income') addMonth(incomeData, t.date, t.amount);
     if(t.type==='expense') addMonth(expenseData, t.date, t.amount);
-  }
+  });
+  
   barChart.data.labels = months;
   barChart.data.datasets[0].data = incomeData;
   barChart.data.datasets[1].data = expenseData;
   barChart.update();
-  updateTicketChartDatasets();
 }
 
-function getRecentDays(n=14){ const days=[]; const d0=new Date(); d0.setHours(0,0,0,0); for(let i=n-1;i>=0;i--){ const dd=new Date(d0); dd.setDate(d0.getDate()-i); days.push(dd.toISOString().slice(0,10)); } return days; }
-
-function updateTicketChartDatasets(){
-  if(!ticketChart) return;
-  const days = getRecentDays(14);
-  ticketChart.data.labels = days.map(d=>d.slice(5));
-  const toggles = Array.from(document.querySelectorAll('#eventToggles input[type="checkbox"]'));
-  const activeEventIds = toggles.filter(t=>t.checked).map(t=>t.value);
-  const datasets = [];
-  for(const [i, ev] of (store.tickets||[]).entries()){
-    if(activeEventIds.length && !activeEventIds.includes(String(ev.id))) continue;
-    const counts = days.map(day => (ev.sales||[]).reduce((a,s)=> a + ((s.date === day) ? Number(s.qty||0) : 0), 0));
-    datasets.push({ label: ev.event, data: counts, borderColor: colorFor(i), backgroundColor: colorFor(i), tension: 0.3, fill: true, pointRadius:2 });
-  }
-  ticketChart.data.datasets = datasets;
-  ticketChart.update();
-}
-
-/* Tab switching */
-document.querySelectorAll('.budget-tab').forEach(btn=>{
-  btn.addEventListener('click', ()=> {
-    document.querySelectorAll('.budget-tab').forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');
-    document.querySelectorAll('.section').forEach(s=> s.style.display = 'none');
-    const id = btn.dataset.tab;
-    const sel = document.getElementById(id);
-    if(sel) sel.style.display = '';
-    setTimeout(()=>{ try{ pieChart.resize(); barChart.resize(); ticketChart && ticketChart.resize(); }catch(e){} }, 120);
-  });
-});
-
-/* Modal helpers with animations + inline error + disable-save behavior */
-const modalBackdrop = el('#modalBackdrop');
-const modalBody = el('#modalBody');
-const modalTitle = el('#modalTitle');
-const modalSave = el('#modalSave');
+// ==================== MODALS ====================
+const modalBackdrop = document.getElementById('modalBackdrop');
+const modalTitle = document.getElementById('modalTitle');
+const modalBody = document.getElementById('modalBody');
+const modalSave = document.getElementById('modalSave');
 
 function openModal(title, html, onSave){
   modalTitle.textContent = title;
   modalBody.innerHTML = html || '';
-  // show
+
+  modalSave.style.display = '';
+  modalSave.disabled = false;
+  modalSave.innerHTML = 'Save';
+
   modalBackdrop.setAttribute('aria-hidden','false');
   modalBackdrop.style.display = 'flex';
   void modalBackdrop.offsetWidth;
   modalBackdrop.classList.add('show');
-  const modalEl = modalBackdrop.querySelector('.modal');
-  modalEl.classList.add('show');
+  modalBackdrop.querySelector('.modal').classList.add('show');
 
-  // clear any previous error
   clearModalError();
 
-  // save button handler - wrap to manage spinner/disabled state
   modalSave.onclick = async ()=> {
-    // prevent double clicks
     setModalSaving(true);
     try {
       await onSave && onSave(modalBody);
-      // only automatically close if onSave doesn't throw & didn't leave modal intentionally open
-      // On success we close modal (if loadStore is called by onSave, UI will refresh)
-      // But allow caller to keep modal open by not returning/throwing? we close on success here.
       closeModal();
     } catch(err) {
-      // show inline error if message present
       showModalError(err && (err.message || err.msg || err.toString()) || 'Save failed');
       console.error('Modal save error', err);
     } finally {
@@ -541,35 +1027,41 @@ function openModal(title, html, onSave){
     }
   };
 
-  modalBackdrop.querySelectorAll('[data-close]').forEach(b=> b.addEventListener('click', closeModal) );
-  setTimeout(()=> {
-    const first = modalBody.querySelector('input,select,textarea,button');
+  modalBackdrop.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click', closeModal));
+
+  setTimeout(()=>{
+    const first = modalBody.querySelector('input,select,textarea');
     if(first) first.focus();
-  }, 60);
+  }, 100);
 }
 
 function closeModal(){
-  const modalEl = modalBackdrop.querySelector('.modal');
-  modalEl.classList.remove('show');
+  const modal = modalBackdrop.querySelector('.modal');
+  modal.classList.remove('show');
   modalBackdrop.classList.remove('show');
-  setTimeout(()=> {
+
+  setTimeout(()=>{
     modalBackdrop.setAttribute('aria-hidden','true');
     modalBackdrop.style.display = 'none';
     modalBody.innerHTML = '';
     modalSave.onclick = null;
     clearModalError();
-  }, 220);
+    modalSave.style.display = '';
+    modalSave.disabled = false;
+    modalSave.innerHTML = 'Save';
+  }, 240);
 }
 
 function setModalSaving(saving){
   if(saving){
     modalSave.disabled = true;
-    modalSave.innerHTML = 'Saving <span class="spinner" aria-hidden="true"></span>';
+    modalSave.innerHTML = 'Saving <span class="spinner"></span>';
   } else {
     modalSave.disabled = false;
     modalSave.innerHTML = 'Save';
   }
 }
+
 function showModalError(msg){
   let elErr = modalBody.querySelector('.field-error');
   if(!elErr){
@@ -580,419 +1072,568 @@ function showModalError(msg){
   elErr.textContent = msg;
   elErr.classList.add('show');
 }
+
 function clearModalError(){
   const elErr = modalBody.querySelector('.field-error');
-  if(elErr){ elErr.textContent = ''; elErr.classList.remove('show'); }
+  if(elErr){ 
+    elErr.textContent = ''; 
+    elErr.classList.remove('show'); 
+  }
 }
 
-document.addEventListener('keydown', (e)=> { if(e.key === 'Escape' && modalBackdrop.getAttribute('aria-hidden') === 'false') closeModal(); });
+function showError(msg){
+  alert(msg);
+}
 
-/* Create flows using API */
-el('#btnAddTx')?.addEventListener('click', ()=> openTransactionModal());
-function openTransactionModal(pref = {}) {
+// ==================== MODAL FORMS ====================
+
+function openTransactionModal(){
+  const categoryOptions = store.categories.map(c=>
+    `<option value="${escapeHtml(c.name)}">${escapeHtml(c.name)}</option>`
+  ).join('');
+  
+  if(store.categories.length === 0){
+    alert('Please add at least one category first before creating transactions.');
+    document.querySelector('[data-tab="categories"]').click();
+    return;
+  }
+  
   openModal('Add Transaction', `
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-      <div style="grid-column:1/-1">
-        <label class="muted">Description</label>
-        <input id="m_txDesc" value="${escapeHtml(pref.description || '')}"
-               style="width:100%;padding:8px;margin-top:6px"/>
+    <div class="form-grid">
+      <div class="form-group full">
+        <label>Description *</label>
+        <input id="m_txDesc" required/>
       </div>
-
-      <div>
-        <label class="muted">Type</label>
-        <select id="m_txType" style="width:100%;padding:8px;margin-top:6px">
+      
+      <div class="form-group">
+        <label>Type *</label>
+        <select id="m_txType">
           <option value="expense">Expense</option>
           <option value="income">Income</option>
         </select>
       </div>
-
-      <div>
-        <label class="muted">Category</label>
-        <input id="m_txCat" value="${escapeHtml(pref.category || 'General')}"
-               style="width:100%;padding:8px;margin-top:6px"/>
+      
+      <div class="form-group">
+        <label>Category *</label>
+        <select id="m_txCat" required>
+          <option value="">Select category...</option>
+          ${categoryOptions}
+        </select>
       </div>
-
-      <div>
-        <label class="muted">Amount</label>
-        <input id="m_txAmount" type="number" step="0.01"
-               value="${pref.amount || ''}"
-               style="width:100%;padding:8px;margin-top:6px"/>
+      
+      <div class="form-group">
+        <label>Amount (₱) *</label>
+        <input id="m_txAmount" type="number" step="0.01" min="0" required/>
       </div>
-
-      <div>
-        <label class="muted">Date</label>
-        <input id="m_txDate" type="date"
-               value="${pref.date || today()}"
-               style="width:100%;padding:8px;margin-top:6px"/>
+      
+      <div class="form-group">
+        <label>Date *</label>
+        <input id="m_txDate" type="date" value="${today()}" required/>
       </div>
-
-      <div style="grid-column:1/-1;margin-top:6px">
-        <label class="muted">Upload Receipt (required)</label>
-        <input id="m_txReceipt" type="file" accept="image/*,application/pdf"
-               required style="width:100%;margin-top:6px"/>
+      
+      <div class="form-group full">
+        <label>Receipt (required) *</label>
+        <input id="m_txReceipt" type="file" accept="image/*,application/pdf" required/>
+        <div class="receipt-preview" id="receiptPreview" style="display:none"></div>
       </div>
     </div>
-  `,
-
-  /* -------------------------
-     SAVE: multipart/form-data
-     ------------------------- */
-  async (root) => {
+  `, async (root) => {
+    const desc = root.querySelector('#m_txDesc').value.trim();
+    const type = root.querySelector('#m_txType').value;
+    const category = root.querySelector('#m_txCat').value;
+    const amount = Number(root.querySelector('#m_txAmount').value);
+    const date = root.querySelector('#m_txDate').value;
     const fileInput = root.querySelector('#m_txReceipt');
     const file = fileInput && fileInput.files && fileInput.files[0];
-
-    if (!file) {
-      throw new Error('Please upload a receipt (required)');
-    }
-
-    // Build multipart form payload
+    
+    console.log('Transaction form data:', {desc, type, category, amount, date, hasFile: !!file});
+    
+    if(!desc) throw new Error('Description is required');
+    if(!category) throw new Error('Please select a category');
+    if(!amount || amount <= 0) throw new Error('Amount must be greater than 0');
+    if(!date) throw new Error('Date is required');
+    if(!file) throw new Error('Receipt is required');
+    
     const form = new FormData();
-    form.append('description', root.querySelector('#m_txDesc').value || 'Transaction');
-    form.append('type', root.querySelector('#m_txType').value);
-    form.append('category', root.querySelector('#m_txCat').value || 'General');
-    form.append('amount', Number(root.querySelector('#m_txAmount').value) || 0);
-    form.append('date', root.querySelector('#m_txDate').value || today());
-    form.append('receipt', file); // <-- IMPORTANT
-
-    // Send to Flask API
-    const res = await fetch(API_ROOT + '/transactions', {
-      method: 'POST',
-      body: form,
-      credentials: 'same-origin'
-    });
-
-    let json = null;
-    try { json = await res.json(); } catch (e) {}
-
-    if (!res.ok) {
-      const errMsg =
-        (json && (json.message || json.msg || json.error)) ||
-        `Upload failed (status ${res.status})`;
-      throw new Error(errMsg);
+    form.append('description', desc);
+    form.append('type', type);
+    form.append('category', category);
+    form.append('amount', amount.toString());
+    form.append('date', date);
+    form.append('receipt', file);
+    
+    console.log('Submitting transaction with FormData');
+    console.log('FormData entries:');
+    for(let pair of form.entries()) {
+      console.log(pair[0], typeof pair[1] === 'object' ? pair[1].name : pair[1]);
     }
+    
+    const result = await apiPOST(API_ROOT + '/transactions', form, true);
+    console.log('Transaction created successfully:', result);
+    
+    await loadStore();
+  });
+  
+  setTimeout(()=>{
+    const input = document.getElementById('m_txReceipt');
+    const preview = document.getElementById('receiptPreview');
+    if(input && preview){
+      input.addEventListener('change', (e)=>{
+        const file = e.target.files[0];
+        if(file){
+          console.log('File selected:', file.name, file.type, file.size);
+          const reader = new FileReader();
+          reader.onload = (ev)=>{
+            if(file.type.startsWith('image/')){
+              preview.innerHTML = `<img src="${ev.target.result}" alt="Receipt preview"/>`;
+              preview.style.display = 'block';
+            } else {
+              preview.innerHTML = `<div style="padding:20px;text-align:center">📄 ${escapeHtml(file.name)}</div>`;
+              preview.style.display = 'block';
+            }
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+    }
+  }, 100);
+}
 
-    await loadStore(); // Refresh UI
+function openCategoryModal(cat = null){
+  if(!IS_ADMIN){
+    alert('Only administrators can manage categories');
+    return;
+  }
+  
+  const editing = !!cat;
+  
+  openModal(editing ? 'Edit Category' : 'Add Category', `
+    <div class="form-grid single">
+      <div class="form-group">
+        <label>Category Name *</label>
+        <input id="m_catName" value="${escapeHtml(cat?.name||'')}" required/>
+      </div>
+      
+      <div class="form-group">
+        <label>Monthly Budget (₱) *</label>
+        <input id="m_catBudget" type="number" step="0.01" min="0" 
+               value="${cat?.budget||0}" required/>
+      </div>
+    </div>
+  `, async (root) => {
+    const name = root.querySelector('#m_catName').value.trim();
+    const budget = Number(root.querySelector('#m_catBudget').value);
+    
+    if(!name) throw new Error('Category name is required');
+    if(budget < 0) throw new Error('Budget cannot be negative');
+    
+    const payload = { name, budget };
+    
+    if(editing){
+      await apiPUT(API_ROOT + '/categories/' + cat.id, payload);
+    } else {
+      await apiPOST(API_ROOT + '/categories', payload);
+    }
+    
+    await loadStore();
   });
 }
 
-
-el('#btnAddTicket')?.addEventListener('click', ()=> openEventModal());
-function openEventModal(ev){
+function openEventModal(ev = null){
+  if(!IS_ADMIN){
+    alert('Only administrators can manage events');
+    return;
+  }
+  
   const editing = !!ev;
-  const values = ev ? ev : { event:'', price:0, total_tickets:100 };
+  
   openModal(editing ? 'Edit Event' : 'Add Event', `
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-      <div style="grid-column:1/-1"><label class="muted">Event Name</label><input id="m_eventName" value="${escapeHtml(values.event||'')}" style="width:100%;padding:8px;margin-top:6px"/></div>
-      <div><label class="muted">Price (₱)</label><input id="m_eventPrice" type="number" value="${Number(values.price||0)}" style="width:100%;padding:8px;margin-top:6px"/></div>
-      <div><label class="muted">Total Tickets</label><input id="m_eventTotal" type="number" value="${Number(values.total_tickets||100)}" style="width:100%;padding:8px;margin-top:6px"/></div>
+    <div class="form-grid">
+      <div class="form-group full">
+        <label>Event Name *</label>
+        <input id="m_eventName" value="${escapeHtml(ev?.event||'')}" required/>
+      </div>
+      
+      <div class="form-group">
+        <label>Ticket Price (₱) *</label>
+        <input id="m_eventPrice" type="number" step="0.01" min="0" 
+               value="${ev?.price||0}" required/>
+      </div>
+      
+      <div class="form-group">
+        <label>Total Tickets *</label>
+        <input id="m_eventTotal" type="number" min="1" 
+               value="${ev?.total_tickets||100}" required/>
+      </div>
     </div>
-  `, async (root)=> {
-    const obj = {
-      event: root.querySelector('#m_eventName').value||'Event',
-      price: Number(root.querySelector('#m_eventPrice').value)||0,
-      total_tickets: Number(root.querySelector('#m_eventTotal').value)||0
-    };
-
-    try{
-      if(editing) {
-        await apiPUT(API_ROOT + '/tickets/' + ev.id, obj);
-      } else {
-        await apiPOST(API_ROOT + '/tickets', obj);
-      }
-      await loadStore();
-    } catch(err) {
-      throw (err && (err.message || err.msg)) || new Error('Failed to save event');
+  `, async (root) => {
+    const name = root.querySelector('#m_eventName').value.trim();
+    const price = Number(root.querySelector('#m_eventPrice').value);
+    const total = Number(root.querySelector('#m_eventTotal').value);
+    
+    if(!name) throw new Error('Event name is required');
+    if(price < 0) throw new Error('Price cannot be negative');
+    if(total < 1) throw new Error('Must have at least 1 ticket');
+    
+    const payload = { event: name, price, total_tickets: total };
+    
+    if(editing){
+      await apiPUT(API_ROOT + '/tickets/' + ev.id, payload);
+    } else {
+      await apiPOST(API_ROOT + '/tickets', payload);
     }
+    
+    await loadStore();
   });
 }
 
-function openSaleModal(eventId){
-  const ev = eventId ? (store.tickets||[]).find(t=>t.id==eventId) : (store.tickets||[])[0];
-  if(!ev){ alert('No event available — add one first'); return; }
-  openModal('Record Sale', `
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-      <div style="grid-column:1/-1"><label class="muted">Buyer Name</label><input id="m_saleBuyer" value="" style="width:100%;padding:8px;margin-top:6px"/></div>
-      <div><label class="muted">Event</label><select id="m_saleEvent" style="width:100%;padding:8px;margin-top:6px">${(store.tickets||[]).map(t=>`<option value="${t.id}" ${t.id==ev.id?'selected':''}>${escapeHtml(t.event)}</option>`).join('')}</select></div>
-      <div><label class="muted">Quantity</label><input id="m_saleQty" type="number" value="1" min="1" style="width:100%;padding:8px;margin-top:6px"/></div>
-      <div><label class="muted">Date</label><input id="m_saleDate" type="date" value="${today()}" style="width:100%;padding:8px;margin-top:6px"/></div>
+function openSaleModal(ticketId){
+  const ev = store.tickets.find(t=>t.id==ticketId);
+  if(!ev){
+    alert('Event not found');
+    return;
+  }
+  
+  const sales = ev.sales || [];
+  const sold = sales.reduce((sum, s) => sum + (s.qty || 0), 0);
+  const remaining = Math.max(0, (ev.total_tickets || 0) - sold);
+  
+  if(remaining <= 0){
+    alert('No tickets remaining for this event!');
+    return;
+  }
+  
+  openModal('Record Ticket Sale', `
+    <div class="form-grid">
+      <div class="form-group full">
+        <label>Buyer Name *</label>
+        <input id="m_saleBuyer" required/>
+      </div>
+      
+      <div class="form-group">
+        <label>Event</label>
+        <input value="${escapeHtml(ev.event)}" disabled/>
+      </div>
+      
+      <div class="form-group">
+        <label>Quantity *</label>
+        <input id="m_saleQty" type="number" min="1" max="${remaining}" 
+               value="1" required/>
+        <div class="muted" style="margin-top:4px;font-size:12px">
+          ${remaining} tickets available
+        </div>
+      </div>
+      
+      <div class="form-group full">
+        <label>Date *</label>
+        <input id="m_saleDate" type="date" value="${today()}" required/>
+      </div>
     </div>
-  `, async (root)=> {
-    const buyer = root.querySelector('#m_saleBuyer').value || 'Buyer';
-    const eventId = root.querySelector('#m_saleEvent').value;
-    const qty = Number(root.querySelector('#m_saleQty').value) || 1;
-    const date = root.querySelector('#m_saleDate').value || today();
-    try{
-      await apiPOST(API_ROOT + `/tickets/${eventId}/sales`, { buyer, qty, date });
-      await loadStore();
-    }catch(err){
-      throw (err && (err.message || err.msg)) || new Error('Failed to record sale');
-    }
+  `, async (root) => {
+    const buyer = root.querySelector('#m_saleBuyer').value.trim();
+    const qty = Number(root.querySelector('#m_saleQty').value);
+    const date = root.querySelector('#m_saleDate').value;
+    
+    if(!buyer) throw new Error('Buyer name is required');
+    if(qty < 1) throw new Error('Quantity must be at least 1');
+    if(qty > remaining) throw new Error(`Only ${remaining} tickets available`);
+    if(!date) throw new Error('Date is required');
+    
+    await apiPOST(API_ROOT + `/tickets/${ticketId}/sales`, { buyer, qty, date });
+    await loadStore();
   });
 }
 
-/* Delegated click handlers */
-// Delegated handler for "view transaction" clicks (works for both list and single items)
-document.body.addEventListener('click', async (e) => {
-  // prefer explicit "View" button
-  const viewBtn = e.target.closest('[data-view-tx-btn]');
-  if(viewBtn){
-    const id = viewBtn.getAttribute('data-view-tx-btn');
-    openTransactionDetails(id);
-    return;
-  }
-
-  // allow clicking the whole tx row
-  const row = e.target.closest('[data-view-tx]');
-  if(row && !e.target.closest('[data-delete-tx]') && !e.target.closest('button[data-edit-event]')) {
-    const id = row.getAttribute('data-view-tx');
-    openTransactionDetails(id);
-    return;
-  }
-});
-
-// Opens the modal for a transaction id or object
-async function openTransactionDetails(txOrId){
-  // find in local store first
-  let tx = null;
-  if(typeof txOrId === 'object') tx = txOrId;
-  else tx = (store.transactions||[]).find(t => String(t.id) === String(txOrId));
-
-  // fallback: fetch from server endpoint if not in store
-  if(!tx){
-    try{
-      const r = await fetch(API_ROOT + '/transactions/' + encodeURIComponent(txOrId), { credentials: 'same-origin' });
-      if(r.ok){
-        tx = await r.json();
-      }
-    }catch(err){ console.warn('Failed to fetch transaction:', err); }
-  }
-
+function openTransactionDetails(txId){
+  const tx = store.transactions.find(t=>t.id==txId);
   if(!tx){
     alert('Transaction not found');
     return;
   }
-
-  // Build modal HTML — keep design consistent, slightly modern
-  let receiptUrl = tx.receipt_url || tx.receipt || null;
-  if (receiptUrl && receiptUrl.startsWith('/')) receiptUrl = window.location.origin + receiptUrl;
+  
+  const receiptUrl = tx.receipt_url || tx.receipt;
   const hasReceipt = !!receiptUrl;
-  const formattedDate = tx.date || tx.created_at || '';
-  const amountHtml = `<div class="${tx.type==='expense'?'amount negative':'amount positive'}" style="font-size:20px">${tx.type==='expense'?'-':''}${money(tx.amount)}</div>`;
-
-  // ------------------- replace receiptPreviewHtml with the following -------------------
-  const isPdf = receiptUrl && receiptUrl.toLowerCase().endsWith('.pdf');
-  const isImage = receiptUrl && /\.(png|jpe?g|gif|webp|bmp|svg)$/i.test(receiptUrl);
-
-  let receiptPreviewHtml;
-  if (!receiptUrl) {
-    receiptPreviewHtml = `<div class="muted">No receipt attached</div>`;
-  } else if (isImage) {
-    // show a responsive image preview
-    receiptPreviewHtml = `
-      <div style="display:flex;gap:10px;align-items:flex-start;flex-wrap:wrap">
-        <a href="${receiptUrl}" target="_blank" rel="noopener noreferrer" style="display:block;max-width:480px">
-          <div style="border-radius:10px;overflow:hidden;border:1px solid #eef1f6;background:#fff">
-            <img src="${receiptUrl}" alt="Receipt" style="display:block;width:100%;height:auto;max-height:520px;object-fit:contain"/>
-          </div>
-        </a>
-        <div style="display:flex;flex-direction:column;gap:8px">
-          <a class="btn" href="${receiptUrl}" download>Download</a>
-          <button class="btn" id="printReceiptBtn">Print</button>
+  
+  let receiptHtml = '<div class="muted">No receipt attached</div>';
+  if(hasReceipt){
+    if(receiptUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i) || receiptUrl.includes('signedURL')){
+      receiptHtml = `
+        <div class="receipt-preview">
+          <img src="${receiptUrl}" alt="Receipt"/>
         </div>
-      </div>
-    `;
-  } else if (isPdf) {
-    // embed a PDF preview (falls back to download in browsers that don't support embed)
-    receiptPreviewHtml = `
-      <div style="display:flex;flex-direction:column;gap:8px">
-        <div style="border-radius:8px;border:1px solid #eef1f6;overflow:hidden;background:#fff">
-          <iframe src="${receiptUrl}" style="width:100%;height:420px;border:0"></iframe>
+        <div style="margin-top:10px;display:flex;gap:8px">
+          <a href="${receiptUrl}" download class="btn btn-outline">Download</a>
+          <a href="${receiptUrl}" target="_blank" class="btn btn-outline">Open</a>
         </div>
-        <div style="display:flex;gap:8px">
-          <a class="btn" href="${receiptUrl}" download>Download PDF</a>
-          <button class="btn" id="printReceiptBtn">Print</button>
+      `;
+    } else {
+      receiptHtml = `
+        <div style="padding:20px;text-align:center;border:1px solid var(--gray-200);border-radius:8px">
+          📄 Receipt attached
         </div>
-      </div>
-    `;
-  } else {
-    // unknown type: provide a link and download
-    receiptPreviewHtml = `
-      <div style="display:flex;flex-direction:column;gap:8px">
-        <div class="muted">Preview not available for this file type.</div>
-        <div style="display:flex;gap:8px">
-          <a class="btn" href="${receiptUrl}" download>Download</a>
-          <a class="btn" href="${receiptUrl}" target="_blank">Open</a>
+        <div style="margin-top:10px;display:flex;gap:8px">
+          <a href="${receiptUrl}" download class="btn btn-outline">Download</a>
+          <a href="${receiptUrl}" target="_blank" class="btn btn-outline">Open</a>
         </div>
-      </div>
-    `;
+      `;
+    }
   }
-  const html = `
-    <div style="display:grid;grid-template-columns:1fr 320px;gap:16px;align-items:start">
+  
+  openModal('Transaction Details', `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
       <div>
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
-          <div>
-            <div style="font-weight:900;font-size:18px;margin-bottom:6px">${escapeHtml(tx.description || '(no description)')}</div>
-            <div class="muted" style="font-size:13px">${escapeHtml(tx.category || 'Uncategorized')} • ${escapeHtml(formattedDate || '')}</div>
-          </div>
-          <div style="text-align:right">${amountHtml}<div class="muted" style="font-size:13px;margin-top:6px">Created: ${escapeHtml(tx.created_at || '')}</div></div>
-        </div>
-
-        <div style="margin-top:12px">
-          <h4 style="margin:0 0 8px 0">Details</h4>
-          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px">
-            <div><div class="muted">Type</div><div style="font-weight:700">${escapeHtml(tx.type || '')}</div></div>
-            <div><div class="muted">Amount</div><div style="font-weight:700">${money(tx.amount)}</div></div>
-            <div style="grid-column:1/-1"><div class="muted">Description</div><div style="font-weight:700">${escapeHtml(tx.description || '')}</div></div>
+        <div class="form-group">
+          <label>Description</label>
+          <div style="padding:10px;background:var(--gray-50);border-radius:6px;font-weight:600">
+            ${escapeHtml(tx.description||'(no description)')}
           </div>
         </div>
-
-        <div style="margin-top:12px">
-          <h4 style="margin:0 0 8px 0">Receipt</h4>
-          ${receiptPreviewHtml}
+        
+        <div class="form-group">
+          <label>Type</label>
+          <div style="padding:10px;background:var(--gray-50);border-radius:6px">
+            ${tx.type==='expense'?'💸 Expense':'💰 Income'}
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label>Category</label>
+          <div class="pill" style="display:inline-block">${escapeHtml(tx.category)}</div>
         </div>
       </div>
-
-      <div style="min-width:220px">
-        <div class="panel" style="padding:12px">
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <div><div class="muted">Transaction ID</div><div style="font-weight:800">${escapeHtml(String(tx.id))}</div></div>
-            <div><div class="muted">Category</div><div class="pill">${escapeHtml(tx.category || '')}</div></div>
+      
+      <div>
+        <div class="form-group">
+          <label>Amount</label>
+          <div style="font-size:24px;font-weight:900;color:${tx.type==='expense'?'var(--red-600)':'var(--accent)'}">
+            ${tx.type==='expense'?'-':''}${money(tx.amount)}
           </div>
-
-          <div style="margin-top:12px">
-            <div class="muted">Date</div>
-            <div style="font-weight:700">${escapeHtml(formattedDate || tx.created_at || '')}</div>
+        </div>
+        
+        <div class="form-group">
+          <label>Date</label>
+          <div style="padding:10px;background:var(--gray-50);border-radius:6px">
+            ${tx.date||'No date'}
           </div>
-
-          <div style="margin-top:12px">
-            <div class="muted">Added</div>
-            <div style="font-weight:700">${escapeHtml(tx.created_at || '')}</div>
-          </div>
-
-          <div style="margin-top:12px;display:flex;gap:8px">
-            <button class="btn" id="downloadReceiptInlineBtn" ${!hasReceipt?'disabled':''}>Download</button>
-            <button class="btn btn-outline" id="closeTxModalBtn">Close</button>
+        </div>
+        
+        <div class="form-group">
+          <label>Added</label>
+          <div style="padding:10px;background:var(--gray-50);border-radius:6px;font-size:13px">
+            ${tx.created_at||'Unknown'}
           </div>
         </div>
       </div>
     </div>
-  `;
+    
+    <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--gray-200)">
+      <label style="font-weight:700;margin-bottom:8px;display:block">Receipt</label>
+      ${receiptHtml}
+    </div>
+  `, null);
+  
+  modalSave.style.display = 'none';
+}
 
-  openModal('Transaction details', html, null);
-
-  // hide the default Save button (we don't want it here)
+async function openArchivesModal(){
+  if(!IS_ADMIN){
+    alert('Only administrators can access archives');
+    return;
+  }
+  
   try{
-    modalSave.style.display = 'none';
-  }catch(e){}
-
-  // wire up modal action buttons (download, print, close)
-  const modalRoot = modalBody;
-  const downloadBtn = modalRoot.querySelector('#downloadReceiptInlineBtn');
-  const printBtn = modalRoot.querySelector('#printReceiptBtn');
-  const closeBtn = modalRoot.querySelector('#closeTxModalBtn');
-
-  if(downloadBtn){
-    downloadBtn.addEventListener('click', (ev) => {
-      if(!hasReceipt) return;
-      // create a temporary link and click it
-      const a = document.createElement('a');
-      a.href = receiptUrl;
-      a.download = receiptUrl.split('/').pop() || `receipt_${tx.id}`;
-      a.target = '_blank';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-    });
-  }
-
-  if(printBtn){
-    printBtn.addEventListener('click', () => {
-      if(!hasReceipt) return;
-      const w = window.open(receiptUrl, '_blank');
-      if(w){
-        w.focus();
-        w.print();
-      }
-    });
-  }
-
-  if(closeBtn){
-    closeBtn.addEventListener('click', () => {
-      // re-enable Save button display and close
-      try{ modalSave.style.display = ''; }catch(e){}
-      closeModal();
-    });
-  }
-
-  // ensure Close via modal backdrop close works — when modal closes we restore modalSave
-  const observerRestore = setInterval(()=> {
-    if(modalBackdrop.getAttribute('aria-hidden') === 'true'){
-      try{ modalSave.style.display = ''; }catch(e){}
-      clearInterval(observerRestore);
+    const archives = await apiGET(API_ROOT + '/archives');
+    
+    if(archives.length === 0){
+      openModal('Archives', '<div class="empty-state">No archived items</div>', null);
+      modalSave.style.display = 'none';
+      return;
     }
-  }, 250);
-}
-
-/* Event toggles & export UI */
-function renderEventToggles(){
-  let container = el('#eventToggles');
-  if(!container){
-    container = document.createElement('div'); container.id='eventToggles'; container.style.marginTop='8px'; el('#ticketEvents').parentNode.insertBefore(container, el('#ticketEvents'));
+    
+    const html = `
+      <div style="max-height:500px;overflow:auto">
+        ${archives.map(a=>{
+          const data = a.data || {};
+          let displayName = '';
+          if(a.archive_type === 'category') displayName = data.name;
+          else if(a.archive_type === 'transaction') displayName = data.description;
+          else if(a.archive_type === 'ticket') displayName = data.event;
+          
+          return `
+            <div class="tx" style="margin-bottom:8px">
+              <div class="left">
+                <div class="desc">
+                  <span class="archive-badge">${a.archive_type}</span>
+                  ${escapeHtml(displayName)}
+                </div>
+                <div class="meta">
+                  Archived: ${a.archived_at?.slice(0,10)||'Unknown'} • ${escapeHtml(a.reason||'')}
+                </div>
+              </div>
+              <div class="right">
+                <button class="btn btn-primary" data-restore-archive="${a.id}">Restore</button>
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
+    
+    openModal('Archives', html, null);
+    modalSave.style.display = 'none';
+    
+    setTimeout(()=>{
+      modalBody.querySelectorAll('[data-restore-archive]').forEach(btn=>{
+        btn.addEventListener('click', async ()=>{
+          const id = btn.getAttribute('data-restore-archive');
+          if(confirm('Restore this item?')){
+            try{
+              await apiPOST(API_ROOT + `/archives/${id}/restore`, {});
+              await loadStore();
+              closeModal();
+            }catch(err){
+              alert('Failed to restore: ' + (err.message||err));
+            }
+          }
+        });
+      });
+    }, 100);
+  }catch(err){
+    alert('Failed to load archives: ' + (err.message||err));
   }
-  container.innerHTML = '';
-  (store.tickets||[]).forEach((ev,i)=>{
-    const idd = ev.id;
-    const cb = document.createElement('label');
-    cb.style.display='inline-flex'; cb.style.alignItems='center'; cb.style.gap='6px'; cb.style.marginRight='8px';
-    cb.innerHTML = `<input type="checkbox" value="${idd}" ${i<5?'checked':''}/> <span style="font-weight:700">${escapeHtml(ev.event)}</span>`;
-    container.appendChild(cb);
+}
+
+// ==================== EVENT HANDLERS ====================
+
+document.querySelectorAll('.budget-tab').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.budget-tab').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    
+    document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+    const id = btn.dataset.tab;
+    const section = document.getElementById(id);
+    if(section) section.classList.add('active');
+    
+    setTimeout(()=>{
+      try{
+        pieChart.resize();
+        barChart.resize();
+      }catch(e){}
+    }, 150);
   });
-  container.querySelectorAll('input[type="checkbox"]').forEach(cb=> cb.addEventListener('change', ()=> updateTicketChartDatasets()));
-  if(!container.querySelector('input:checked') && container.querySelector('input')) container.querySelector('input').checked = true;
-}
-
-el('#btnExportSalesCSV')?.addEventListener('click', ()=> {
-  window.location = API_ROOT + '/export/csv-sales';
 });
 
-el('#btnExport')?.addEventListener('click', ()=> {
-  window.location = API_ROOT + '/export';
+document.getElementById('btnAddTx')?.addEventListener('click', openTransactionModal);
+document.getElementById('btnAddTicket')?.addEventListener('click', ()=>openEventModal());
+document.getElementById('btnArchives')?.addEventListener('click', openArchivesModal);
+
+document.getElementById('btnAddCategory')?.addEventListener('click', ()=>openCategoryModal());
+
+document.body.addEventListener('click', async (e)=>{
+  if(e.target.closest('[data-view-tx]')){
+    const btn = e.target.closest('[data-view-tx]');
+    const id = btn.getAttribute('data-view-tx');
+    openTransactionDetails(Number(id));
+    return;
+  }
+  
+  if(e.target.closest('[data-delete-tx]')){
+    if(!IS_ADMIN) return;
+    const btn = e.target.closest('[data-delete-tx]');
+    const id = btn.getAttribute('data-delete-tx');
+    if(confirm('Archive this transaction? You can restore it from the archives.')){
+      try{
+        await apiDELETE(API_ROOT + '/transactions/' + id);
+        await loadStore();
+      }catch(err){
+        alert('Failed to archive: ' + (err.message||err));
+      }
+    }
+    return;
+  }
+  
+  if(e.target.closest('[data-edit-cat]')){
+    const btn = e.target.closest('[data-edit-cat]');
+    const id = Number(btn.getAttribute('data-edit-cat'));
+    const cat = store.categories.find(c=>c.id===id);
+    if(cat) openCategoryModal(cat);
+    return;
+  }
+  
+  if(e.target.closest('[data-delete-cat]')){
+    if(!IS_ADMIN) return;
+    const btn = e.target.closest('[data-delete-cat]');
+    const id = btn.getAttribute('data-delete-cat');
+    if(confirm('Archive this category? You can restore it from the archives.')){
+      try{
+        await apiDELETE(API_ROOT + '/categories/' + id);
+        await loadStore();
+      }catch(err){
+        alert('Failed to archive: ' + (err.message||err));
+      }
+    }
+    return;
+  }
+  
+  if(e.target.closest('[data-edit-event]')){
+    const btn = e.target.closest('[data-edit-event]');
+    const id = Number(btn.getAttribute('data-edit-event'));
+    const ev = store.tickets.find(t=>t.id===id);
+    if(ev) openEventModal(ev);
+    return;
+  }
+  
+  if(e.target.closest('[data-delete-event]')){
+    if(!IS_ADMIN) return;
+    const btn = e.target.closest('[data-delete-event]');
+    const id = btn.getAttribute('data-delete-event');
+    if(confirm('Archive this event? You can restore it from the archives.')){
+      try{
+        await apiDELETE(API_ROOT + '/tickets/' + id);
+        await loadStore();
+      }catch(err){
+        alert('Failed to archive: ' + (err.message||err));
+      }
+    }
+    return;
+  }
+  
+  if(e.target.closest('[data-add-sale]')){
+    const btn = e.target.closest('[data-add-sale]');
+    const id = Number(btn.getAttribute('data-add-sale'));
+    openSaleModal(id);
+    return;
+  }
 });
 
-/* Manage categories add UI */
-el('#btnAddCategory')?.addEventListener('click', async ()=>{
-  const name = (el('#newCatName').value||'').trim();
-  const budget = Number(el('#newCatBudget').value||0);
-  if(!name){ alert('Enter category name'); return; }
+document.getElementById('btnFilterTx')?.addEventListener('click', async ()=>{
+  const start = document.getElementById('filterStartDate').value;
+  const end = document.getElementById('filterEndDate').value;
+  
   try{
-    await apiPOST(API_ROOT + '/categories', { name, budget });
-    el('#newCatName').value=''; el('#newCatBudget').value='';
-    await loadStore();
-  }catch(err){ console.error(err); alert('Failed to add category'); }
+    let url = API_ROOT + '/transactions';
+    const params = [];
+    if(start) params.push('start=' + start);
+    if(end) params.push('end=' + end);
+    if(params.length) url += '?' + params.join('&');
+    
+    const txs = await apiGET(url);
+    store.transactions = txs || [];
+    renderTransactions();
+  }catch(err){
+    alert('Failed to filter: ' + (err.message||err));
+  }
 });
 
-/* render all */
-function renderAll(){
-  renderSummary();
-  renderCategories();
-  renderCategoriesManage();
-  renderTransactions();
-  renderTicketsAndSales();
-  updateCharts();
-}
+document.addEventListener('keydown', (e)=>{
+  if(e.key === 'Escape' && modalBackdrop.getAttribute('aria-hidden') === 'false'){
+    closeModal();
+  }
+});
 
-/* initial */
+// ==================== INIT ====================
 buildCharts();
 loadStore();
-
-/* small compatibility */
-if(!Element.prototype.matches){
-  Element.prototype.matches = Element.prototype.msMatchesSelector || Element.prototype.webkitMatchesSelector;
-}
-
-/* small helper to avoid XSS when injecting values into template strings */
-function escapeHtml(s){
-  return String(s || '').replace(/[&<>\"']/g, function(ch){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'})[ch]; });
-}
 </script>
 {% endblock %}
