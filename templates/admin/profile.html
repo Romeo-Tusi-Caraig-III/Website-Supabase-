@@ -15,7 +15,7 @@
       --toast-error: #b91c1c;
     }
 
-    /* ---------- Top bar (white, auto-sized) ---------- */
+    /* Top bar */
     .topbar {
       position: sticky;
       top: 0;
@@ -33,7 +33,6 @@
     .page-title { font-size:28px; font-weight:800; color:var(--emerald-600); margin:0; }
     .page-sub { color:var(--muted); font-size:13px; margin-top:4px; }
 
-    /* Page inner */
     .page-inner {
       width: 100%;
       max-width: var(--content-max);
@@ -79,7 +78,9 @@
       font-weight:700;
       border:none;
       cursor:pointer;
+      transition: all 0.2s ease;
     }
+    .btn-edit-top:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(5,150,105,0.3); }
 
     .card-edit {
       border:1.5px solid var(--emerald-600);
@@ -89,14 +90,39 @@
       border-radius:10px;
       font-weight:700;
       cursor:pointer;
+      transition: all 0.2s ease;
     }
+    .card-edit:hover { background:var(--emerald-600); color:#fff; }
 
     .profile-row { display:flex; gap:18px; align-items:center; justify-content:flex-start; }
     .avatar {
       width:64px; height:64px; border-radius:999px; display:grid; place-items:center;
       background:linear-gradient(135deg,var(--emerald-600),var(--accent)); color:#fff; font-size:26px;
       flex-shrink:0;
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+      transition: all 0.2s ease;
     }
+    .avatar:hover { transform: scale(1.05); box-shadow: 0 4px 12px rgba(5,150,105,0.3); }
+    .avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .avatar-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .avatar:hover .avatar-overlay { display: flex; }
+    #avatarInput { display: none; }
     .profile-meta { flex:1; min-width:0; }
     .profile-name { font-weight:800; font-size:1.05rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .profile-email { color:var(--muted); margin-top:6px; font-size:0.95rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -123,16 +149,38 @@
       gap:6px;
     }
     .chip .label { font-size:12px; color:var(--muted); }
-    .chip .value { font-weight:800; color:#111827; }
+    .chip .value { font-weight:800; color:#111827; word-break: break-word; }
 
     .personal-grid { display:grid; grid-template-columns: repeat(3, 1fr); gap:14px; }
     .personal-grid .chip { min-height:64px; }
 
     .settings-list { display:flex; flex-direction:column; gap:10px; }
     .settings-row { display:flex; align-items:center; justify-content:space-between; padding:6px 0; border-bottom:1px solid #f0f2f1; }
+    .row-title { font-weight:700; }
+    .row-sub { font-size:13px; color:var(--muted); margin-top:4px; }
 
+    /* Loading state */
+    .loading-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(255,255,255,0.9);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 9998;
+    }
+    .loading-overlay.show { display: flex; }
+    .spinner-large {
+      width: 48px;
+      height: 48px;
+      border: 4px solid #e5e7eb;
+      border-top-color: var(--emerald-600);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* modal & animations */
+    /* Modal */
     .modal {
       position: fixed; inset: 0; background: rgba(0,0,0,0.28);
       display: none; align-items: center; justify-content: center; z-index: 2000; padding: 20px;
@@ -152,9 +200,16 @@
 
     .form-row { margin-bottom:12px; width:100%; }
     .form-row label { display:block; font-weight:700; margin-bottom:6px; color:#111827; font-size:13px; }
-    .form-row input { width:100%; padding:10px 12px; border-radius:8px; border:1px solid #e6e9e8; font-size:14px; box-sizing:border-box; }
+    .form-row input, .form-row select { 
+      width:100%; padding:10px 12px; border-radius:8px; border:1px solid #e6e9e8; 
+      font-size:14px; box-sizing:border-box; 
+    }
+    .form-row input:focus, .form-row select:focus {
+      outline: none;
+      border-color: var(--emerald-600);
+      box-shadow: 0 0 0 3px rgba(5,150,105,0.1);
+    }
 
-    /* Save button states & animation */
     .btn-save {
       background:var(--emerald-600);
       color:#fff;
@@ -167,18 +222,28 @@
       align-items:center;
       gap:8px;
       min-width:80px;
+      transition: all 0.2s ease;
     }
+    .btn-save:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(5,150,105,0.3); }
     .btn-save:disabled { opacity:0.55; transform:none; cursor:not-allowed; }
-    .btn-save.saving {
-      transform: translateY(0);
-      transition: transform .18s ease;
-    }
     .btn-save .spinner {
-      width:16px; height:16px; border-radius:50%; border:2px solid rgba(255,255,255,0.2); border-top-color:#fff; animation: spin .8s linear infinite; display:inline-block;
+      width:16px; height:16px; border-radius:50%; border:2px solid rgba(255,255,255,0.2); 
+      border-top-color:#fff; animation: spin .8s linear infinite; display:inline-block;
     }
-    @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* TOASTS */
+    .btn-cancel {
+      background:#fff;
+      border:1.5px solid #e6e9e8;
+      color:#374151;
+      padding:8px 12px;
+      border-radius:8px;
+      cursor:pointer;
+      font-weight:700;
+      transition: all 0.2s ease;
+    }
+    .btn-cancel:hover { background:#f9fafb; border-color:#d1d5db; }
+
+    /* Toast */
     .toast-wrap {
       position: fixed;
       left: 50%;
@@ -197,7 +262,7 @@
       max-width: 520px;
       background: #fff;
       border-radius: 10px;
-      padding: 10px 14px;
+      padding: 12px 16px;
       box-shadow: 0 8px 30px rgba(0,0,0,0.12);
       display:flex;
       gap:12px;
@@ -211,18 +276,6 @@
     .toast.show { opacity: 1; transform: translateY(0); }
     .toast.success { border-left-color: var(--toast-success); color: #065f46; }
     .toast.error { border-left-color: var(--toast-error); color: #7f1d1d; }
-    .toast .icon { width:22px; height:22px; display:grid; place-items:center; border-radius:6px; background:rgba(0,0,0,0.03); }
-    .toast .action-btn {
-      margin-left:auto;
-      background:transparent;
-      border:1.5px solid rgba(0,0,0,0.06);
-      padding:6px 10px;
-      border-radius:8px;
-      font-weight:700;
-      cursor:pointer;
-      color:var(--emerald-600);
-      background:#fff;
-    }
 
     @media (max-width:1100px) {
       :root { --content-max: 1100px; --card-max-width: 980px; }
@@ -242,6 +295,11 @@
 
 {% block body %}
 
+  <!-- Loading overlay -->
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner-large"></div>
+  </div>
+
   <!-- Top bar -->
   <header class="topbar" role="banner">
     <div class="topbar-left">
@@ -258,14 +316,20 @@
   <div class="page-inner">
     <div class="cards-col">
 
-            <!-- Profile card -->
+      <!-- Profile card -->
       <section class="card">
         <div class="card-body">
           <div class="profile-row">
-            <div class="avatar"><i class="fas fa-user"></i></div>
+            <div class="avatar" id="avatarIcon" title="Click to change profile picture">
+              <div id="avatarInitials"><i class="fas fa-user"></i></div>
+              <div class="avatar-overlay">
+                <span>Change</span>
+              </div>
+            </div>
+            <input type="file" id="avatarInput" accept="image/jpeg,image/jpg,image/png,image/gif" />
             <div class="profile-meta">
-              <div id="profileName" class="profile-name">Last Name, First Name</div>
-              <div id="profileEmail" class="profile-email">student@university.edu</div>
+              <div id="profileName" class="profile-name">Loading...</div>
+              <div id="profileEmail" class="profile-email">Loading...</div>
               <div><span id="statusBadge" class="status-pill">Active Student</span></div>
             </div>
             <div>
@@ -283,13 +347,12 @@
         </div>
         <div class="card-body">
           <div class="senior-grid">
-            <div class="chip"><div class="label">Senior High School</div><div id="school" class="value">School Name</div></div>
-            <div class="chip"><div class="label">Strand / Track</div><div id="strand" class="value">STEM</div></div>
-            <div class="chip"><div class="label">Grade Level</div><div id="gradeLevel" class="value">Grade 12</div></div>
-
-            <div class="chip"><div class="label">School Year</div><div id="schoolYear" class="value">2022 - 2023</div></div>
-            <div class="chip"><div class="label">LRN</div><div id="lrn" class="value">0000-0000-0000</div></div>
-            <div class="chip"><div class="label">Adviser / Section</div><div id="adviserSection" class="value">Mrs. Smith / Section A</div></div>
+            <div class="chip"><div class="label">Senior High School</div><div id="school" class="value">-</div></div>
+            <div class="chip"><div class="label">Strand / Track</div><div id="strand" class="value">-</div></div>
+            <div class="chip"><div class="label">Grade Level</div><div id="gradeLevel" class="value">-</div></div>
+            <div class="chip"><div class="label">School Year</div><div id="schoolYear" class="value">-</div></div>
+            <div class="chip"><div class="label">LRN</div><div id="lrn" class="value">-</div></div>
+            <div class="chip"><div class="label">Section</div><div id="adviserSection" class="value">-</div></div>
           </div>
         </div>
       </section>
@@ -302,10 +365,10 @@
         </div>
         <div class="card-body">
           <div class="personal-grid">
-            <div class="chip"><div class="label">Phone</div><div id="phone" class="value">+63 912 345 6789</div></div>
-            <div class="chip"><div class="label">Date of Birth</div><div id="dob" class="value">January 15, 2003</div></div>
-            <div class="chip"><div class="label">Address</div><div id="address" class="value">Manila, Philippines</div></div>
-            <div class="chip"><div class="label">Emergency Contact</div><div id="emergency" class="value">+63 998 765 4321</div></div>
+            <div class="chip"><div class="label">Phone</div><div id="phone" class="value">-</div></div>
+            <div class="chip"><div class="label">Date of Birth</div><div id="dob" class="value">-</div></div>
+            <div class="chip"><div class="label">Address</div><div id="address" class="value">-</div></div>
+            <div class="chip"><div class="label">Emergency Contact</div><div id="emergency" class="value">-</div></div>
           </div>
         </div>
       </section>
@@ -339,7 +402,7 @@
                 <div class="row-title">Two-Factor Authentication</div>
                 <div class="row-sub">Add an extra layer of security</div>
               </div>
-              <div><button class="card-edit" id="btnToggle2FA">Enable</button></div>
+              <div><span id="twoFactorStatus" style="color:var(--muted);font-size:13px;">Disabled</span></div>
             </div>
 
           </div>
@@ -378,69 +441,56 @@
 
 {% endblock %}
 
-
 {% block scripts %}
   {{ super() }}
 
   <script>
     /* ===============================
-       Local Storage + Defaults
+       State Management
     =============================== */
-    const STORAGE_KEY = 'studentProfileData_v5';
-
-    const defaultData = {
-      profile:{
-        lastName:'Last Name',
-        firstName:'First Name',
-        middleName:'',
-        suffix:'',
-        email:'student@university.edu',
-        status:'Active Student'
+    let profileData = {
+      profile: {
+        firstName: '',
+        lastName: '',
+        middleName: '',
+        suffix: '',
+        email: '',
+        status: 'Active Student',
+        profilePicture: null
       },
-      academic:{
-        school:'School Name',
-        strand:'STEM',
-        gradeLevel:'Grade 12',
-        schoolYear:'2022 - 2023',
-        lrn:'0000-0000-0000',
-        adviserSection:'Mrs. Smith / Section A'
+      academic: {
+        school: '',
+        strand: '',
+        gradeLevel: '',
+        schoolYear: '',
+        lrn: '',
+        adviserSection: ''
       },
-      personal:{
-        phone:'+63 912 345 6789',
-        dob:'January 15, 2003',
-        address:'Manila, Philippines',
-        emergency:'+63 998 765 4321'
+      personal: {
+        phone: '',
+        dob: '',
+        address: '',
+        emergency: ''
       },
-      settings:{
-        emailNotifications:true,
-        twoFactor:false
+      settings: {
+        emailNotifications: true,
+        twoFactor: false
       }
     };
 
-    function loadData(){
-      try{
-        const raw = localStorage.getItem(STORAGE_KEY);
-        return raw ? JSON.parse(raw) : structuredClone(defaultData);
-      }catch(e){
-        return structuredClone(defaultData);
-      }
-    }
-
-    function saveData(d){
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(d));
-    }
-
-    let state = loadData();
     const $ = id => document.getElementById(id);
-
 
     /* ===============================
        DOM References
     =============================== */
     const refs = {
+      loadingOverlay: $('loadingOverlay'),
       profileName: $('profileName'),
       profileEmail: $('profileEmail'),
       statusBadge: $('statusBadge'),
+      avatarIcon: $('avatarIcon'),
+      avatarInitials: $('avatarInitials'),
+      avatarInput: $('avatarInput'),
 
       school: $('school'),
       strand: $('strand'),
@@ -455,7 +505,7 @@
       emergency: $('emergency'),
 
       emailNotifications: $('emailNotifications'),
-      btnToggle2FA: $('btnToggle2FA'),
+      twoFactorStatus: $('twoFactorStatus'),
 
       btnEditProfile: $('btnEditProfile'),
       btnEditProfileSmall: $('btnEditProfileSmall'),
@@ -474,58 +524,213 @@
       toastWrap: $('toastWrap')
     };
 
+    async function uploadProfilePicture(file) {
+      try {
+        // Validate file
+        if (!file) {
+          showToast('Please select a file', { type: 'error' });
+          return;
+        }
+
+        const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+        if (!validTypes.includes(file.type)) {
+          showToast('Please upload a valid image (JPG, PNG, or GIF)', { type: 'error' });
+          return;
+        }
+
+        const maxSize = 5 * 1024 * 1024; // 5MB
+        if (file.size > maxSize) {
+          showToast('Image must be less than 5MB', { type: 'error' });
+          return;
+        }
+
+        refs.loadingOverlay.classList.add('show');
+
+        // Create FormData
+        const formData = new FormData();
+        formData.append('profile_picture', file);
+
+        const response = await fetch('/api/profile/picture', {
+          method: 'POST',
+          body: formData
+        });
+
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
+          throw new Error(result.message || 'Failed to upload picture');
+        }
+
+        // Update local state with new picture URL
+        profileData.profile.profilePicture = result.picture_url;
+        render();
+        showToast('Profile picture updated successfully');
+      } catch (error) {
+        console.error('Error uploading profile picture:', error);
+        showToast(error.message || 'Failed to upload profile picture', { type: 'error' });
+      } finally {
+        refs.loadingOverlay.classList.remove('show');
+        // Reset input
+        refs.avatarInput.value = '';
+      }
+    }
+    async function fetchProfile() {
+      try {
+        refs.loadingOverlay.classList.add('show');
+        const response = await fetch('/api/profile', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch profile');
+        }
+
+        const data = await response.json();
+        profileData = data;
+        render();
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+        showToast('Failed to load profile data', { type: 'error' });
+      } finally {
+        refs.loadingOverlay.classList.remove('show');
+      }
+    }
+
+    async function updateProfile(section, fields) {
+      try {
+        refs.modalSave.disabled = true;
+        refs.modalSave.innerHTML = '<div class="spinner"></div><span>Saving...</span>';
+
+        const response = await fetch('/api/profile', {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ section, fields })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
+          throw new Error(result.message || 'Failed to update profile');
+        }
+
+        // Update local state
+        if (section === 'profile') {
+          Object.assign(profileData.profile, fields);
+        } else if (section === 'academic') {
+          Object.assign(profileData.academic, fields);
+        } else if (section === 'personal') {
+          Object.assign(profileData.personal, fields);
+        } else if (section === 'settings') {
+          Object.assign(profileData.settings, fields);
+        }
+
+        render();
+        showToast('Profile updated successfully');
+        closeModal();
+      } catch (error) {
+        console.error('Error updating profile:', error);
+        showToast(error.message || 'Failed to update profile', { type: 'error' });
+      } finally {
+        refs.modalSave.innerHTML = '<span class="label">Save</span>';
+        refs.modalSave.disabled = false;
+      }
+    }
+
+    async function changePassword(newPassword, confirmPassword) {
+      try {
+        refs.modalSave.disabled = true;
+        refs.modalSave.innerHTML = '<div class="spinner"></div><span>Changing...</span>';
+
+        const response = await fetch('/api/profile/password', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ newPassword, confirmPassword })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
+          throw new Error(result.message || 'Failed to change password');
+        }
+
+        showToast('Password changed successfully');
+        closeModal();
+      } catch (error) {
+        console.error('Error changing password:', error);
+        showToast(error.message || 'Failed to change password', { type: 'error' });
+      } finally {
+        refs.modalSave.innerHTML = '<span class="label">Save</span>';
+        refs.modalSave.disabled = false;
+      }
+    }
 
     /* ===============================
        Rendering
     =============================== */
-    function getDisplayName(){
-      const p = state.profile;
-      const middle = p.middleName ? (p.middleName.trim().length === 1 ? p.middleName.trim()+'.' : p.middleName.trim()) : '';
-      const suffix = p.suffix ? ', '+p.suffix.trim() : '';
-      const mid = middle ? ' '+middle : '';
-      return `${p.lastName}, ${p.firstName}${mid}${suffix}`;
+    function getDisplayName() {
+      const p = profileData.profile;
+      const middle = p.middleName ? (p.middleName.trim().length === 1 ? p.middleName.trim() + '.' : p.middleName.trim()) : '';
+      const suffix = p.suffix ? ', ' + p.suffix.trim() : '';
+      const mid = middle ? ' ' + middle : '';
+      return `${p.lastName || 'Last Name'}, ${p.firstName || 'First Name'}${mid}${suffix}`;
     }
 
-    function render(){
+    function getInitials() {
+      const p = profileData.profile;
+      const first = (p.firstName || 'F').charAt(0).toUpperCase();
+      const last = (p.lastName || 'L').charAt(0).toUpperCase();
+      return first + last;
+    }
+
+    function render() {
+      // Profile section
       refs.profileName.textContent = getDisplayName();
-      refs.profileEmail.textContent = state.profile.email;
-      refs.statusBadge.textContent = state.profile.status;
+      refs.profileEmail.textContent = profileData.profile.email || 'No email';
+      refs.statusBadge.textContent = profileData.profile.status || 'Active Student';
+      
+      // Update avatar
+      if (profileData.profile.profilePicture) {
+        // Show profile picture
+        refs.avatarInitials.innerHTML = `<img src="${profileData.profile.profilePicture}" alt="Profile Picture" />`;
+      } else {
+        // Show initials
+        refs.avatarInitials.textContent = getInitials();
+      }
 
-      refs.school.textContent = state.academic.school;
-      refs.strand.textContent = state.academic.strand;
-      refs.gradeLevel.textContent = state.academic.gradeLevel;
-      refs.schoolYear.textContent = state.academic.schoolYear;
-      refs.lrn.textContent = state.academic.lrn;
-      refs.adviserSection.textContent = state.academic.adviserSection;
+      // Academic section
+      refs.school.textContent = profileData.academic.school || '-';
+      refs.strand.textContent = profileData.academic.strand || '-';
+      refs.gradeLevel.textContent = profileData.academic.gradeLevel || '-';
+      refs.schoolYear.textContent = profileData.academic.schoolYear || '-';
+      refs.lrn.textContent = profileData.academic.lrn || '-';
+      refs.adviserSection.textContent = profileData.academic.adviserSection || '-';
 
-      refs.phone.textContent = state.personal.phone;
-      refs.dob.textContent = state.personal.dob;
-      refs.address.textContent = state.personal.address;
-      refs.emergency.textContent = state.personal.emergency;
+      // Personal section
+      refs.phone.textContent = profileData.personal.phone || '-';
+      refs.dob.textContent = profileData.personal.dob || '-';
+      refs.address.textContent = profileData.personal.address || '-';
+      refs.emergency.textContent = profileData.personal.emergency || '-';
 
-      refs.emailNotifications.checked = !!state.settings.emailNotifications;
-      refs.btnToggle2FA.textContent = state.settings.twoFactor ? 'Disable' : 'Enable';
+      // Settings
+      refs.emailNotifications.checked = !!profileData.settings.emailNotifications;
+      refs.twoFactorStatus.textContent = profileData.settings.twoFactor ? 'Enabled' : 'Disabled';
+      refs.twoFactorStatus.style.color = profileData.settings.twoFactor ? 'var(--emerald-600)' : 'var(--muted)';
     }
-
 
     /* ===============================
        Toast System
     =============================== */
-    function showToast(msg, opts={type:'success', duration:3000}){
+    function showToast(msg, opts = { type: 'success', duration: 3000 }) {
       const div = document.createElement('div');
-      div.className = 'toast show '+(opts.type);
+      div.className = 'toast show ' + opts.type;
       div.textContent = msg;
-
-      div.style.position = 'fixed';
-      div.style.left = '50%';
-      div.style.transform = 'translateX(-50%)';
-      div.style.bottom = '34px';
-      div.style.background = '#fff';
-      div.style.padding = '10px 14px';
-      div.style.borderRadius = '10px';
-      div.style.boxShadow = '0 8px 30px rgba(0,0,0,0.12)';
-      div.style.fontWeight = '700';
-      div.style.zIndex = '9999';
 
       refs.toastWrap.appendChild(div);
 
@@ -533,190 +738,238 @@
         div.style.opacity = '0';
         setTimeout(() => div.remove(), 300);
       }, opts.duration);
-    };
-
+    }
 
     /* ===============================
        Modal Helpers
     =============================== */
     let currentForm = null;
     let initialFormState = '';
-    let requireConfirmOnClose = false;
 
-    function serializeModalFields(){
+    function serializeModalFields() {
       return [...refs.modalBody.querySelectorAll('input, select')]
         .map(i => `${i.id}=${i.value}`)
         .join('|');
     }
 
-    function buildInput(labelText, id, value='', type='text'){
+    function buildInput(labelText, id, value = '', type = 'text', options = {}) {
       const wrap = document.createElement('div');
       wrap.className = 'form-row';
-      wrap.style.marginBottom = '12px';
 
       const label = document.createElement('label');
       label.textContent = labelText;
 
-      const input = document.createElement('input');
-      input.type = type;
-      input.id = id;
-      input.value = value;
+      if (options.select) {
+        const select = document.createElement('select');
+        select.id = id;
+        options.select.forEach(opt => {
+          const option = document.createElement('option');
+          option.value = opt;
+          option.textContent = opt;
+          if (opt === value) option.selected = true;
+          select.appendChild(option);
+        });
+        wrap.append(label, select);
+      } else {
+        const input = document.createElement('input');
+        input.type = type;
+        input.id = id;
+        input.value = value || '';
+        if (options.placeholder) input.placeholder = options.placeholder;
+        wrap.append(label, input);
+      }
 
-      wrap.append(label, input);
       return wrap;
     }
 
-    function buildForm(form){
-      if(form === 'profile'){
+    function buildForm(form) {
+      if (form === 'profile') {
+        refs.modalSub.textContent = 'Update your basic profile information';
         refs.modalBody.append(
-          buildInput('Last Name','lastName', state.profile.lastName),
-          buildInput('First Name','firstName', state.profile.firstName),
-          buildInput('Middle Name','middleName', state.profile.middleName),
-          buildInput('Suffix','suffix', state.profile.suffix),
-          buildInput('Email','email', state.profile.email, 'email'),
-          buildInput('Status','status', state.profile.status),
+          buildInput('First Name', 'firstName', profileData.profile.firstName),
+          buildInput('Middle Name', 'middleName', profileData.profile.middleName, 'text', { placeholder: 'Optional' }),
+          buildInput('Last Name', 'lastName', profileData.profile.lastName),
+          buildInput('Suffix', 'suffix', profileData.profile.suffix, 'text', { placeholder: 'Jr., Sr., III, etc.' }),
+          buildInput('Status', 'status', profileData.profile.status, 'text', {
+            select: ['Active Student', 'Inactive', 'Alumni', 'Transferee']
+          })
         );
-      }
-
-      else if(form === 'academic'){
+      } else if (form === 'academic') {
+        refs.modalSub.textContent = 'Update your academic information';
         refs.modalBody.append(
-          buildInput('Senior High School','school', state.academic.school),
-          buildInput('Strand','strand', state.academic.strand),
-          buildInput('Grade Level','gradeLevel', state.academic.gradeLevel),
-          buildInput('School Year','schoolYear', state.academic.schoolYear),
-          buildInput('LRN','lrn', state.academic.lrn),
-          buildInput('Adviser / Section','adviserSection', state.academic.adviserSection),
+          buildInput('Senior High School', 'school', profileData.academic.school),
+          buildInput('Strand / Track', 'strand', profileData.academic.strand, 'text', {
+            select: ['STEM', 'ABM', 'HUMSS', 'GAS', 'TVL']
+          }),
+          buildInput('Grade Level', 'gradeLevel', profileData.academic.gradeLevel, 'text', {
+            select: ['Grade 11', 'Grade 12']
+          }),
+          buildInput('School Year', 'schoolYear', profileData.academic.schoolYear, 'text', { placeholder: '2023 - 2024' }),
+          buildInput('LRN', 'lrn', profileData.academic.lrn, 'text', { placeholder: '0000-0000-0000' }),
+          buildInput('Adviser / Section', 'adviserSection', profileData.academic.adviserSection)
         );
-      }
-
-      else if(form === 'personal'){
+      } else if (form === 'personal') {
+        refs.modalSub.textContent = 'Update your personal information';
         refs.modalBody.append(
-          buildInput('Phone','phone', state.personal.phone),
-          buildInput('Date of Birth','dob', state.personal.dob),
-          buildInput('Address','address', state.personal.address),
-          buildInput('Emergency Contact','emergency', state.personal.emergency),
+          buildInput('Phone Number', 'phone', profileData.personal.phone, 'tel', { placeholder: '+63 912 345 6789' }),
+          buildInput('Date of Birth', 'dob', profileData.personal.dob, 'text', { placeholder: 'January 15, 2003' }),
+          buildInput('Address', 'address', profileData.personal.address, 'text', { placeholder: 'City, Province' }),
+          buildInput('Emergency Contact', 'emergency', profileData.personal.emergency, 'tel', { placeholder: '+63 998 765 4321' })
         );
-      }
-
-      else if(form === 'password'){
+      } else if (form === 'password') {
+        refs.modalSub.textContent = 'Password must be at least 8 characters with a number and special character';
         refs.modalBody.append(
-          buildInput('New Password','newPassword','', 'password'),
-          buildInput('Confirm Password','confirmPassword','', 'password'),
+          buildInput('New Password', 'newPassword', '', 'password', { placeholder: 'Enter new password' }),
+          buildInput('Confirm Password', 'confirmPassword', '', 'password', { placeholder: 'Confirm new password' })
         );
       }
     }
 
-
-    function openModal(title, form){
+    function openModal(title, form) {
       currentForm = form;
       refs.modalTitle.textContent = title;
       refs.modalBody.innerHTML = '';
       buildForm(form);
 
       refs.modal.classList.add('open');
-      refs.modal.setAttribute('aria-hidden','false');
+      refs.modal.setAttribute('aria-hidden', 'false');
 
       refs.modalSave.disabled = true;
       initialFormState = serializeModalFields();
-      requireConfirmOnClose = false;
 
-      refs.modalBody.querySelectorAll('input').forEach(i =>
+      refs.modalBody.querySelectorAll('input, select').forEach(i =>
         i.addEventListener('input', onModalChange)
       );
     }
 
-    function onModalChange(){
+    function onModalChange() {
       const dirty = serializeModalFields() !== initialFormState;
-      requireConfirmOnClose = dirty;
       refs.modalSave.disabled = !dirty;
     }
 
-    function closeModal(force=false){
+    function closeModal() {
       refs.modal.classList.remove('open');
-      refs.modal.setAttribute('aria-hidden','true');
+      refs.modal.setAttribute('aria-hidden', 'true');
       refs.modalBody.innerHTML = '';
       refs.modalSave.disabled = true;
+      refs.modalSave.innerHTML = '<span class="label">Save</span>';
       currentForm = null;
     }
 
-
     /* ===============================
-       Saving Logic
+       Save Logic
     =============================== */
     refs.modalSave.addEventListener('click', async () => {
-      if(!currentForm) return;
+      if (!currentForm) return;
 
-      if(currentForm === 'profile'){
-        state.profile.lastName = $('lastName').value;
-        state.profile.firstName = $('firstName').value;
-        state.profile.middleName = $('middleName').value;
-        state.profile.suffix = $('suffix').value;
-        state.profile.email = $('email').value;
-        state.profile.status = $('status').value;
-      }
+      if (currentForm === 'profile') {
+        const fields = {
+          firstName: $('firstName').value.trim(),
+          lastName: $('lastName').value.trim(),
+          middleName: $('middleName').value.trim(),
+          suffix: $('suffix').value.trim(),
+          status: $('status').value
+        };
 
-      else if(currentForm === 'academic'){
-        state.academic.school = $('school').value;
-        state.academic.strand = $('strand').value;
-        state.academic.gradeLevel = $('gradeLevel').value;
-        state.academic.schoolYear = $('schoolYear').value;
-        state.academic.lrn = $('lrn').value;
-        state.academic.adviserSection = $('adviserSection').value;
-      }
-
-      else if(currentForm === 'personal'){
-        state.personal.phone = $('phone').value;
-        state.personal.dob = $('dob').value;
-        state.personal.address = $('address').value;
-        state.personal.emergency = $('emergency').value;
-      }
-
-      else if(currentForm === 'password'){
-        let p1 = $('newPassword').value;
-        let p2 = $('confirmPassword').value;
-        if(p1 !== p2){
-          showToast("Passwords do not match", {type:'error'});
+        if (!fields.firstName || !fields.lastName) {
+          showToast('First name and last name are required', { type: 'error' });
           return;
         }
+
+        await updateProfile('profile', fields);
+      } else if (currentForm === 'academic') {
+        const fields = {
+          school: $('school').value.trim(),
+          strand: $('strand').value,
+          gradeLevel: $('gradeLevel').value,
+          schoolYear: $('schoolYear').value.trim(),
+          lrn: $('lrn').value.trim(),
+          adviserSection: $('adviserSection').value.trim()
+        };
+
+        await updateProfile('academic', fields);
+      } else if (currentForm === 'personal') {
+        const fields = {
+          phone: $('phone').value.trim(),
+          dob: $('dob').value.trim(),
+          address: $('address').value.trim(),
+          emergency: $('emergency').value.trim()
+        };
+
+        await updateProfile('personal', fields);
+      } else if (currentForm === 'password') {
+        const newPassword = $('newPassword').value;
+        const confirmPassword = $('confirmPassword').value;
+
+        if (!newPassword || !confirmPassword) {
+          showToast('Both password fields are required', { type: 'error' });
+          return;
+        }
+
+        if (newPassword !== confirmPassword) {
+          showToast('Passwords do not match', { type: 'error' });
+          return;
+        }
+
+        if (newPassword.length < 8) {
+          showToast('Password must be at least 8 characters', { type: 'error' });
+          return;
+        }
+
+        await changePassword(newPassword, confirmPassword);
       }
-
-      saveData(state);
-      render();
-      showToast("Saved successfully");
-      closeModal(true);
     });
-
 
     /* ===============================
        Event Bindings
     =============================== */
-    refs.btnEditProfile.onclick = () => openModal('Edit Profile','profile');
-    refs.btnEditProfileSmall.onclick = () => openModal('Edit Profile','profile');
-    refs.btnEditAcademic.onclick = () => openModal('Edit Academic Info','academic');
-    refs.btnEditPersonal.onclick = () => openModal('Edit Personal Info','personal');
-    refs.btnChangePassword.onclick = () => openModal('Change Password','password');
+    refs.btnEditProfile.onclick = () => openModal('Edit Profile', 'profile');
+    refs.btnEditProfileSmall.onclick = () => openModal('Edit Profile', 'profile');
+    refs.btnEditAcademic.onclick = () => openModal('Edit Academic Info', 'academic');
+    refs.btnEditPersonal.onclick = () => openModal('Edit Personal Info', 'personal');
+    refs.btnChangePassword.onclick = () => openModal('Change Password', 'password');
 
-    refs.modalCancel.onclick = () => closeModal();
-    refs.modalClose.onclick = () => closeModal();
+    refs.modalCancel.onclick = closeModal;
+    refs.modalClose.onclick = closeModal;
     refs.modal.addEventListener('click', e => {
-      if(e.target === refs.modal) closeModal();
+      if (e.target === refs.modal) closeModal();
     });
 
-    /* toggle settings */
-    refs.emailNotifications.onchange = e => {
-      state.settings.emailNotifications = e.target.checked;
-      saveData(state);
-      showToast("Email notification preference saved");
+    // Avatar upload
+    refs.avatarIcon.onclick = () => {
+      refs.avatarInput.click();
     };
 
-    refs.btnToggle2FA.onclick = () => {
-      state.settings.twoFactor = !state.settings.twoFactor;
-      saveData(state);
-      render();
-      showToast("Two-factor setting updated");
+    refs.avatarInput.onchange = (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        uploadProfilePicture(file);
+      }
     };
 
-    /* initial render */
-    document.addEventListener('DOMContentLoaded', render);
+    // Email notifications toggle
+    refs.emailNotifications.onchange = async (e) => {
+      const checked = e.target.checked;
+      try {
+        await updateProfile('settings', { emailNotifications: checked });
+      } catch (error) {
+        // Revert on error
+        e.target.checked = !checked;
+      }
+    };
+
+    /* ===============================
+       Initialize
+    =============================== */
+    document.addEventListener('DOMContentLoaded', () => {
+      fetchProfile();
+    });
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && refs.modal.classList.contains('open')) {
+        closeModal();
+      }
+    });
   </script>
 {% endblock %}

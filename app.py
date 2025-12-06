@@ -19,7 +19,9 @@ from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 from email.mime.text import MIMEText
 from decimal import Decimal
-
+import re
+from PIL import Image
+import io
 from flask import (
     Flask,
     render_template,
@@ -1250,16 +1252,18 @@ def api_tasks():
         return json_response(False, 'Server error', 500)
 
 
-@app.route('/api/tasks/<int:task_id>', methods=['GET', 'PATCH', 'DELETE'])
+@app.route('/api/tasks/<task_id>', methods=['GET', 'PATCH', 'DELETE'])
 @login_required
 def api_task_item(task_id):
     sb = get_supabase()
+    logger.debug('api_task_item called with task_id=%r (type=%s)', task_id, type(task_id))
+    # Remove UUID check - support both int and UUID IDs
     if request.method == 'GET':
         task = fetch_one('tasks', id=task_id)
         if not task:
             return json_response(False, 'Not found', 404)
         return jsonify(serialize_task(task))
-    
+
     if request.method == 'DELETE':
         try:
             task = fetch_one('tasks', id=task_id)
@@ -1341,6 +1345,233 @@ def api_task_item(task_id):
     except Exception:
         logger.exception('Update task error')
         return json_response(False, 'Server error', 500)
+
+@app.route('/api/tasks/archive', methods=['GET'])
+@login_required
+def api_tasks_archive_list():
+    """Return archived task snapshots (most-recent first)."""
+    try:
+        sb = get_supabase()
+        success, data, error = safe_execute(
+            sb.table('tasks_archives').select('*').order('archived_at', desc=True),
+            'get_tasks_archives'
+        )
+        if not success:
+            return json_response(False, 'Failed to fetch archives', 500)
+        # Normalize snapshot to object if stored as string
+        def norm(r):
+            snap = r.get('snapshot')
+            if isinstance(snap, str):
+                try:
+                    snap = json.loads(snap)
+                except Exception:
+                    snap = snap
+            return {
+                'id': r.get('id'),
+                'task_id': r.get('task_id'),
+                'snapshot': snap,
+                'archived_by': r.get('archived_by'),
+                'archived_at': r.get('archived_at')
+            }
+        return jsonify([norm(r) for r in (data or [])])
+    except Exception:
+        logger.exception('Get task archives error')
+        return json_response(False, 'Server error', 500)
+
+
+@app.route('/api/tasks/<task_id>/archive', methods=['POST'])
+@login_required
+def api_tasks_archive(task_id):
+    sb = get_supabase()
+    logger.debug('api_tasks_archive called with task_id=%r (type=%s)', task_id, type(task_id))
+
+    try:
+        # fetch task
+        task = fetch_one('tasks', id=task_id)
+        if not task:
+            return json_response(False, 'Task not found', 404)
+        
+        # build snapshot (include the original task_id)
+        snapshot = {
+            'id': task.get('id'),
+            'title': task.get('title'),
+            'due': task.get('due'),
+            'priority': task.get('priority'),
+            'notes': task.get('notes'),
+            'progress': int(task.get('progress') or 0),
+            'type': task.get('type'),
+            'completed': bool(task.get('completed')),
+            'created_at': task.get('created_at'),
+        }
+
+        # Don't include task_id as a separate column - store it in snapshot
+        payload = {
+            'snapshot': json.dumps(snapshot),
+            'archived_by': session.get('user_id'),
+            'archived_at': datetime.now(timezone.utc).isoformat()
+        }
+
+        success_ins, data_ins, err_ins = safe_execute(
+            sb.table('tasks_archives').insert(payload),
+            'create_task_archive'
+        )
+        if not success_ins:
+            return json_response(False, f'Failed to archive task: {err_ins}', 500)
+
+        # delete original
+        success_del, _, err_del = safe_execute(
+            sb.table('tasks').delete().eq('id', task_id),
+            'delete_task_after_archive'
+        )
+        if not success_del:
+            # Try to remove archive record on failure to avoid duplicates
+            try:
+                if data_ins and isinstance(data_ins, list) and len(data_ins) > 0:
+                    aid = data_ins[0].get('id')
+                    if aid:
+                        sb.table('tasks_archives').delete().eq('id', aid).execute()
+            except Exception:
+                logger.exception('Failed to rollback archive after delete failure')
+            return json_response(False, 'Failed to remove task after archiving', 500)
+
+        archive_id = data_ins[0].get('id') if (data_ins and isinstance(data_ins, list) and len(data_ins) > 0) else None
+        return json_response(True, 'Task archived', 200, archive_id=archive_id)
+    except Exception:
+        logger.exception('Archive task error')
+        return json_response(False, 'Server error', 500)
+@app.route('/api/tasks/archive/<archive_id>/restore', methods=['POST'])
+@login_required
+def api_tasks_archive_restore(archive_id):
+    """Restore an archived task into tasks table and remove archive record."""
+    sb = get_supabase()
+    try:
+        arch = fetch_one('tasks_archives', id=archive_id)
+        if not arch:
+            return json_response(False, 'Archive not found', 404)
+
+        snap = arch.get('snapshot')
+        if isinstance(snap, str):
+            try:
+                snap = json.loads(snap)
+            except Exception:
+                snap = {}
+
+        # Remove id if present in snapshot, to let DB create new id
+        if isinstance(snap, dict) and 'id' in snap:
+            snap.pop('id', None)
+
+        # Ensure fields match tasks table columns - minimal required
+        payload = {
+            'title': snap.get('title'),
+            'due': snap.get('due'),
+            'priority': snap.get('priority') or 'medium',
+            'notes': snap.get('notes'),
+            'progress': int(snap.get('progress') or 0),
+            'type': snap.get('type') or 'assignment',
+            'completed': bool(snap.get('completed')),
+            'created_at': snap.get('created_at') or datetime.now(timezone.utc).isoformat()
+        }
+
+        success_ins, data_ins, err_ins = safe_execute(
+            sb.table('tasks').insert(payload),
+            'restore_task_insert'
+        )
+        if not success_ins:
+            return json_response(False, f'Failed to restore task: {err_ins}', 500)
+
+        # delete archive record
+        success_del, _, err_del = safe_execute(
+            sb.table('tasks_archives').delete().eq('id', archive_id),
+            'delete_task_archive_after_restore'
+        )
+        if not success_del:
+            logger.warning(f"Restored task but failed to delete archive id={archive_id}: {err_del}")
+
+        return json_response(True, 'Task restored', 200, task=data_ins[0] if data_ins else None)
+    except Exception:
+        logger.exception('Restore archive error')
+        return json_response(False, 'Server error', 500)
+
+
+@app.route('/api/tasks/archive/<archive_id>/permanent', methods=['DELETE'])
+@login_required
+def api_tasks_archive_delete_permanent(archive_id):
+    """Permanently delete an archived snapshot."""
+    sb = get_supabase()
+    try:
+        arch = fetch_one('tasks_archives', id=archive_id)
+        if not arch:
+            return json_response(False, 'Archive not found', 404)
+
+        success, _, error = safe_execute(
+            sb.table('tasks_archives').delete().eq('id', archive_id),
+            'delete_task_archive_permanent'
+        )
+        if not success:
+            return json_response(False, 'Failed to delete archive', 500)
+        return json_response(True, 'Archive permanently deleted')
+    except Exception:
+        logger.exception('Permanent delete archive error')
+        return json_response(False, 'Server error', 500)
+
+
+@app.route('/api/tasks/stats', methods=['GET'])
+@login_required
+def api_tasks_stats():
+    """Simple task stats used by planner UI."""
+    sb = get_supabase()
+    try:
+        # pending
+        success, pending_rows, err = safe_execute(
+            sb.table('tasks').select('id').filter('completed', 'eq', False),
+            'count_pending'
+        )
+        pending = len(pending_rows or []) if success else 0
+
+        success, completed_rows, err = safe_execute(
+            sb.table('tasks').select('id').filter('completed', 'eq', True),
+            'count_completed'
+        )
+        completed = len(completed_rows or []) if success else 0
+
+        success, high_rows, err = safe_execute(
+            sb.table('tasks').select('id').eq('priority', 'high'),
+            'count_high'
+        )
+        high = len(high_rows or []) if success else 0
+
+        # due this week
+        # simplest approach: fetch all with due not null and compute client-side
+        success, all_rows, err = safe_execute(
+            sb.table('tasks').select('id,due,progress,completed,priority,created_at'),
+            'get_all_tasks_for_stats'
+        )
+        dueWeek = 0
+        overdue = 0
+        if success and all_rows:
+            today = datetime.now(timezone.utc).date()
+            in7 = today + timedelta(days=7)
+            for r in (all_rows or []):
+                due = r.get('due')
+                if due:
+                    try:
+                        dt = datetime.fromisoformat(due.replace('Z', '+00:00')).date() if isinstance(due, str) else (due.date() if isinstance(due, datetime) else None)
+                    except Exception:
+                        try:
+                            dt = datetime.strptime(str(due)[:10], '%Y-%m-%d').date()
+                        except Exception:
+                            dt = None
+                    if dt:
+                        if dt < today:
+                            overdue += 1
+                        if today <= dt <= in7:
+                            dueWeek += 1
+
+        return json_response(True, 'Stats fetched', 200, pending=pending, completed=completed, high=high, dueWeek=dueWeek, overdue=overdue)
+    except Exception:
+        logger.exception('Tasks stats error')
+        return json_response(False, 'Server error', 500)
+
 # -----------------------
 # Budget API
 # -----------------------
@@ -2304,6 +2535,371 @@ def serve_receipt(filename):
         logger.exception('serve_receipt error')
         abort(404)
 
+# -----------------------
+# Profile API
+# -----------------------
+@app.route('/api/profile', methods=['GET'])
+@login_required
+def api_get_profile():
+    """Get current user's profile data"""
+    try:
+        user_id = session.get('user_id')
+        if not user_id:
+            return json_response(False, 'Not authenticated', 401)
+        
+        sb = get_supabase()
+        user = fetch_one('users', id=user_id)
+        
+        if not user:
+            return json_response(False, 'User not found', 404)
+        
+        # Return profile data
+        profile_data = {
+            'profile': {
+                'firstName': user.get('first_name') or '',
+                'lastName': user.get('last_name') or '',
+                'middleName': user.get('middle_name') or '',
+                'suffix': user.get('suffix') or '',
+                'email': user.get('email') or '',
+                'status': user.get('status') or 'Active Student',
+                'profilePicture': user.get('profile_picture')  # Include profile picture
+            },
+            'academic': {
+                'school': user.get('school') or '',
+                'strand': user.get('strand') or '',
+                'gradeLevel': user.get('grade_level') or '',
+                'schoolYear': user.get('school_year') or '',
+                'lrn': user.get('lrn') or '',
+                'adviserSection': user.get('adviser_section') or ''
+            },
+            'personal': {
+                'phone': user.get('phone') or '',
+                'dob': user.get('date_of_birth') or '',
+                'address': user.get('address') or '',
+                'emergency': user.get('emergency_contact') or ''
+            },
+            'settings': {
+                'emailNotifications': bool(user.get('email_notifications', True)),
+                'twoFactor': bool(user.get('two_factor_enabled', False))
+            }
+        }
+        
+        return jsonify(profile_data), 200
+        
+    except Exception:
+        logger.exception('Get profile error')
+        return json_response(False, 'Server error', 500)
+
+
+@app.route('/api/profile', methods=['PATCH', 'PUT'])
+@login_required
+def api_update_profile():
+    """Update current user's profile data"""
+    try:
+        user_id = session.get('user_id')
+        if not user_id:
+            return json_response(False, 'Not authenticated', 401)
+        
+        data = request.get_json() or {}
+        section = data.get('section')  # 'profile', 'academic', 'personal', 'settings'
+        fields = data.get('fields', {})
+        
+        if not section or not fields:
+            return json_response(False, 'Section and fields required', 400)
+        
+        sb = get_supabase()
+        update_data = {}
+        
+        # Map frontend fields to database columns
+        if section == 'profile':
+            if 'firstName' in fields:
+                update_data['first_name'] = fields['firstName']
+            if 'lastName' in fields:
+                update_data['last_name'] = fields['lastName']
+            if 'middleName' in fields:
+                update_data['middle_name'] = fields['middleName']
+            if 'suffix' in fields:
+                update_data['suffix'] = fields['suffix']
+            if 'status' in fields:
+                update_data['status'] = fields['status']
+            
+            # Update display_name
+            if 'firstName' in fields or 'lastName' in fields or 'middleName' in fields or 'suffix' in fields:
+                user = fetch_one('users', id=user_id)
+                first = fields.get('firstName', user.get('first_name', ''))
+                middle = fields.get('middleName', user.get('middle_name', ''))
+                last = fields.get('lastName', user.get('last_name', ''))
+                suffix = fields.get('suffix', user.get('suffix', ''))
+                
+                display_name = first
+                if middle:
+                    display_name += f" {middle}"
+                display_name += f" {last}"
+                if suffix:
+                    display_name += f", {suffix}"
+                update_data['display_name'] = display_name.strip()
+        
+        elif section == 'academic':
+            if 'school' in fields:
+                update_data['school'] = fields['school']
+            if 'strand' in fields:
+                update_data['strand'] = fields['strand']
+            if 'gradeLevel' in fields:
+                update_data['grade_level'] = fields['gradeLevel']
+            if 'schoolYear' in fields:
+                update_data['school_year'] = fields['schoolYear']
+            if 'lrn' in fields:
+                update_data['lrn'] = fields['lrn']
+            if 'adviserSection' in fields:
+                update_data['adviser_section'] = fields['adviserSection']
+        
+        elif section == 'personal':
+            if 'phone' in fields:
+                update_data['phone'] = fields['phone']
+            if 'dob' in fields:
+                update_data['date_of_birth'] = fields['dob']
+            if 'address' in fields:
+                update_data['address'] = fields['address']
+            if 'emergency' in fields:
+                update_data['emergency_contact'] = fields['emergency']
+        
+        elif section == 'settings':
+            if 'emailNotifications' in fields:
+                update_data['email_notifications'] = bool(fields['emailNotifications'])
+            if 'twoFactor' in fields:
+                update_data['two_factor_enabled'] = bool(fields['twoFactor'])
+        
+        if not update_data:
+            return json_response(False, 'No valid fields to update', 400)
+        
+        # Add updated timestamp
+        update_data['profile_updated_at'] = datetime.now(timezone.utc).isoformat()
+        
+        # Update in database
+        success, _, error = safe_execute(
+            sb.table('users').update(update_data).eq('id', user_id),
+            'update_profile'
+        )
+        
+        if not success:
+            return json_response(False, f'Failed to update profile: {error}', 500)
+        
+        # Update session data if name changed
+        if 'display_name' in update_data:
+            session['display_name'] = update_data['display_name']
+        if 'first_name' in update_data:
+            session['first_name'] = update_data['first_name']
+        if 'last_name' in update_data:
+            session['last_name'] = update_data['last_name']
+        
+        return json_response(True, 'Profile updated successfully', 200)
+        
+    except Exception:
+        logger.exception('Update profile error')
+        return json_response(False, 'Server error', 500)
+
+
+@app.route('/api/profile/password', methods=['POST'])
+@login_required
+def api_change_password():
+    """Change user password"""
+    try:
+        user_id = session.get('user_id')
+        if not user_id:
+            return json_response(False, 'Not authenticated', 401)
+        
+        data = request.get_json() or {}
+        new_password = data.get('newPassword', '').strip()
+        confirm_password = data.get('confirmPassword', '').strip()
+        
+        if not new_password or not confirm_password:
+            return json_response(False, 'Both password fields required', 400)
+        
+        if new_password != confirm_password:
+            return json_response(False, 'Passwords do not match', 400)
+        
+        if len(new_password) < 8:
+            return json_response(False, 'Password must be at least 8 characters', 400)
+        
+        # Validate password strength
+        if not re.search(r'\d', new_password):
+            return json_response(False, 'Password must contain at least one number', 400)
+        if not re.search(r'[!@#$%^&*()_\-+={[\]}\|\\:;"\'<>,.?/]', new_password):
+            return json_response(False, 'Password must contain at least one special character', 400)
+        
+        sb = get_supabase()
+        password_hash = generate_password_hash(new_password)
+        
+        success, _, error = safe_execute(
+            sb.table('users').update({'password_hash': password_hash}).eq('id', user_id),
+            'change_password'
+        )
+        
+        if not success:
+            return json_response(False, f'Failed to change password: {error}', 500)
+        
+        return json_response(True, 'Password changed successfully', 200)
+        
+    except Exception:
+        logger.exception('Change password error')
+        return json_response(False, 'Server error', 500)
+# Profile picture configuration
+PROFILE_PICTURE_BUCKET = os.getenv('SUPABASE_PROFILE_BUCKET', 'profile-pictures')
+MAX_PROFILE_SIZE = 5 * 1024 * 1024  # 5MB
+
+@app.route('/api/profile/picture', methods=['POST'])
+@login_required
+def api_upload_profile_picture():
+    """Upload and update user's profile picture"""
+    try:
+        user_id = session.get('user_id')
+        if not user_id:
+            return json_response(False, 'Not authenticated', 401)
+        
+        # Check if file was uploaded
+        if 'profile_picture' not in request.files:
+            return json_response(False, 'No file uploaded', 400)
+        
+        file = request.files['profile_picture']
+        
+        if not file or file.filename == '':
+            return json_response(False, 'No file selected', 400)
+        
+        # Validate file type
+        if not allowed_file(file.filename):
+            return json_response(False, 'Invalid file type. Use JPG, PNG, or GIF', 400)
+        
+        # Validate file size
+        file.seek(0, 2)  # Seek to end
+        size = file.tell()
+        file.seek(0)  # Reset to beginning
+        
+        if size > MAX_PROFILE_SIZE:
+            return json_response(False, 'File too large. Maximum 5MB', 400)
+        
+        # Read and process image
+        try:
+            image = Image.open(file)
+            
+            # Convert to RGB if necessary
+            if image.mode in ('RGBA', 'LA', 'P'):
+                background = Image.new('RGB', image.size, (255, 255, 255))
+                if image.mode == 'P':
+                    image = image.convert('RGBA')
+                background.paste(image, mask=image.split()[-1] if image.mode == 'RGBA' else None)
+                image = background
+            
+            # Resize to max 800x800 while maintaining aspect ratio
+            max_size = (800, 800)
+            image.thumbnail(max_size, Image.Resampling.LANCZOS)
+            
+            # Save to bytes
+            output = io.BytesIO()
+            image.save(output, format='JPEG', quality=85, optimize=True)
+            output.seek(0)
+            file_content = output.read()
+            
+        except Exception as e:
+            logger.exception(f"Error processing image: {e}")
+            return json_response(False, 'Invalid image file', 400)
+        
+        # Generate unique filename
+        ext = 'jpg'  # Always save as JPG after processing
+        unique_filename = f"profile_{user_id}_{uuid.uuid4().hex}.{ext}"
+        
+        sb = get_supabase()
+        
+        # Get current profile picture to delete old one
+        user = fetch_one('users', id=user_id)
+        old_picture = user.get('profile_picture') if user else None
+        
+        # Upload new picture to Supabase Storage
+        try:
+            sb.storage.from_(PROFILE_PICTURE_BUCKET).upload(
+                unique_filename, 
+                file_content,
+                file_options={"content-type": "image/jpeg"}
+            )
+        except Exception as e:
+            logger.exception(f"Failed to upload to Supabase storage: {e}")
+            return json_response(False, 'Failed to upload image', 500)
+        
+        # Get public URL
+        try:
+            url_response = sb.storage.from_(PROFILE_PICTURE_BUCKET).get_public_url(unique_filename)
+            picture_url = url_response
+        except Exception as e:
+            logger.warning(f"Failed to get public URL, using path: {e}")
+            picture_url = f"/api/profile/picture/{unique_filename}"
+        
+        # Update user record
+        success, _, error = safe_execute(
+            sb.table('users').update({'profile_picture': picture_url}).eq('id', user_id),
+            'update_profile_picture'
+        )
+        
+        if not success:
+            # Clean up uploaded file
+            try:
+                sb.storage.from_(PROFILE_PICTURE_BUCKET).remove([unique_filename])
+            except Exception:
+                pass
+            return json_response(False, f'Failed to update profile: {error}', 500)
+        
+        # Delete old picture if exists
+        if old_picture:
+            try:
+                # Extract filename from URL or path
+                old_filename = old_picture.split('/')[-1]
+                if old_filename.startswith('profile_'):
+                    sb.storage.from_(PROFILE_PICTURE_BUCKET).remove([old_filename])
+            except Exception as e:
+                logger.warning(f"Failed to delete old profile picture: {e}")
+        
+        return json_response(
+            True, 
+            'Profile picture updated successfully', 
+            200, 
+            picture_url=picture_url
+        )
+        
+    except Exception as e:
+        logger.exception('Upload profile picture error')
+        return json_response(False, 'Server error', 500)
+
+
+@app.route('/api/profile/picture/<filename>')
+@login_required
+def serve_profile_picture(filename):
+    """Serve profile picture from Supabase storage"""
+    try:
+        safe_name = secure_filename(filename)
+        if not safe_name:
+            abort(404)
+        
+        sb = get_supabase()
+        
+        # Get public URL
+        try:
+            url = sb.storage.from_(PROFILE_PICTURE_BUCKET).get_public_url(safe_name)
+            return redirect(url)
+        except Exception:
+            # Fallback to signed URL
+            try:
+                response = sb.storage.from_(PROFILE_PICTURE_BUCKET).create_signed_url(
+                    safe_name, 
+                    3600
+                )
+                signed_url = response.get('signedURL')
+                if signed_url:
+                    return redirect(signed_url)
+            except Exception as e:
+                logger.exception(f"Failed to get profile picture URL: {e}")
+        
+        abort(404)
+    except Exception:
+        logger.exception('serve_profile_picture error')
+        abort(404)
 # -----------------------
 # Debug routes
 # -----------------------
